@@ -134,7 +134,7 @@ export function RelatoriosClient({
     })
   }, [folhaSalarios, periodoResumo, hoje, anoActual])
 
-  const totalSalariosPagos = salariosFiltrадos.reduce((a: number, fs: any) => a + (Number(fs.total_rendimentos) || 0), 0)
+  const totalSalariosPagos = salariosFiltrадos.reduce((a: number, fs: any) => a + (Number(fs.total_bruto) || 0), 0)
 
   // Lucro inclui salários se disponíveis
   const totalCustosOperacionais = totalDespesas + totalSalariosPagos
@@ -165,7 +165,7 @@ export function RelatoriosClient({
       // Incluir salários pagos no mês se disponíveis
       const sal = (folhaSalarios || [])
         .filter((fs: any) => fs.estado === "pago" && fs.ano === ano && (fs.mes - 1) === mes)
-        .reduce((a: number, fs: any) => a + (Number(fs.total_rendimentos) || 0), 0)
+        .reduce((a: number, fs: any) => a + (Number(fs.total_bruto) || 0), 0)
 
       meses.push({ mes: mesLabel, receita: rec - nc, despesas: desp + sal, lucro: rec - nc - desp - sal })
     }

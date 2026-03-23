@@ -39,20 +39,24 @@ interface FolhaSalario {
   salario_base: number
   subsidio_alimentacao: number
   subsidio_transporte: number
-  horas_extras: number
+  horas_extra: number
+  valor_horas_extra: number
   bonus: number
-  outros_rendimentos: number
+  comissoes: number
+  outros_subsidios: number
   inss_trabalhador: number
   irps: number
-  faltas_desconto: number
+  desconto_faltas: number
+  faltas: number
+  dias_trabalhados: number
   adiantamentos: number
-  outras_deducoes: number
-  inss_patronal: number
-  total_rendimentos: number
-  total_deducoes: number
+  outros_descontos: number
+  inss_empresa: number
+  total_bruto: number
+  total_descontos: number
   salario_liquido: number
   estado: "pendente" | "processado" | "pago" | "cancelado"
-  data_processamento: string | null
+  data_aprovacao: string | null
   data_pagamento: string | null
   observacoes: string | null
   created_at: string
@@ -105,14 +109,18 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
     salario_base: "",
     subsidio_alimentacao: "0",
     subsidio_transporte: "0",
-    horas_extras: "0",
+    horas_extra: "0",
+    valor_horas_extra: "0",
     bonus: "0",
-    outros_rendimentos: "0",
+    comissoes: "0",
+    outros_subsidios: "0",
     inss_trabalhador: "0",
     irps: "0",
-    faltas_desconto: "0",
+    faltas: "0",
+    desconto_faltas: "0",
+    dias_trabalhados: "22",
     adiantamentos: "0",
-    outras_deducoes: "0",
+    outros_descontos: "0",
     observacoes: "",
   })
 
@@ -121,46 +129,48 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
     const salarioBase = parseFloat(formData.salario_base) || 0
     const subsidioAlimentacao = parseFloat(formData.subsidio_alimentacao) || 0
     const subsidioTransporte = parseFloat(formData.subsidio_transporte) || 0
-    const horasExtras = parseFloat(formData.horas_extras) || 0
+    const valorHorasExtra = parseFloat(formData.valor_horas_extra) || 0
     const bonus = parseFloat(formData.bonus) || 0
-    const outrosRendimentos = parseFloat(formData.outros_rendimentos) || 0
+    const comissoes = parseFloat(formData.comissoes) || 0
+    const outrosSubsidios = parseFloat(formData.outros_subsidios) || 0
 
     const inssTrabalador = parseFloat(formData.inss_trabalhador) || 0
     const irps = parseFloat(formData.irps) || 0
-    const faltasDesconto = parseFloat(formData.faltas_desconto) || 0
+    const descontoFaltas = parseFloat(formData.desconto_faltas) || 0
     const adiantamentos = parseFloat(formData.adiantamentos) || 0
-    const outrasDeducoes = parseFloat(formData.outras_deducoes) || 0
+    const outrosDescontos = parseFloat(formData.outros_descontos) || 0
 
-    const totalRendimentos = salarioBase + subsidioAlimentacao + subsidioTransporte + horasExtras + bonus + outrosRendimentos
-    const totalDeducoes = inssTrabalador + irps + faltasDesconto + adiantamentos + outrasDeducoes
-    const salarioLiquido = totalRendimentos - totalDeducoes
-    const inssPatronal = salarioBase * 0.04 // 4% do salário base
+    const totalBruto = salarioBase + subsidioAlimentacao + subsidioTransporte + valorHorasExtra + bonus + comissoes + outrosSubsidios
+    const totalDescontos = inssTrabalador + irps + descontoFaltas + adiantamentos + outrosDescontos
+    const salarioLiquido = totalBruto - totalDescontos
+    const inssEmpresa = salarioBase * 0.04 // 4% do salário base
 
     return {
-      totalRendimentos,
-      totalDeducoes,
+      totalBruto,
+      totalDescontos,
       salarioLiquido,
-      inssPatronal,
+      inssEmpresa,
     }
   }, [formData])
 
   // FIX #5: IRPS calculado sobre rendimento colectável total
-  // (salário base + horas extras + bónus + outros rendimentos)
+  // (salário base + horas extras + bónus + comissões + outros)
   // Subsídios de alimentação/transporte têm isenções fiscais em MZ — não incluídos no colectável
   // INSS: 3% do salário base apenas
   const calcularDeducoes = (
     salarioBase: number,
-    horasExtras = 0,
+    valorHorasExtra = 0,
     bonus = 0,
-    outrosRendimentos = 0
+    comissoes = 0,
+    outrosSubsidios = 0
   ) => {
     // INSS trabalhador: 3% do salário base
     const inss = salarioBase * 0.03
 
     // IRPS: tabela moçambicana sobre rendimento colectável
-    // Rendimento colectável = salário base + horas extras + bónus + outros
+    // Rendimento colectável = salário base + horas extras + bónus + comissões + outros
     // (subsídios alimentação/transporte excluídos — isentos parcialmente)
-    const rendimentoColectavel = salarioBase + horasExtras + bonus + outrosRendimentos
+    const rendimentoColectavel = salarioBase + valorHorasExtra + bonus + comissoes + outrosSubsidios
 
     let irps = 0
     if (rendimentoColectavel > 42000) {
@@ -188,9 +198,9 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
     const folhasMes = folhaSalarios.filter((f) => f.mes === selectedMes && f.ano === selectedAno)
     return {
       totalFuncionarios: folhasMes.length,
-      totalBruto: folhasMes.reduce((acc, f) => acc + f.total_rendimentos, 0),
+      totalBruto: folhasMes.reduce((acc, f) => acc + f.total_bruto, 0),
       totalLiquido: folhasMes.reduce((acc, f) => acc + f.salario_liquido, 0),
-      totalDeducoes: folhasMes.reduce((acc, f) => acc + f.total_deducoes, 0),
+      totalDescontos: folhasMes.reduce((acc, f) => acc + f.total_descontos, 0),
       pendentes: folhasMes.filter((f) => f.estado === "pendente").length,
       processados: folhasMes.filter((f) => f.estado === "processado").length,
       pagos: folhasMes.filter((f) => f.estado === "pago").length,
@@ -226,19 +236,23 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
       const salarioBase = parseFloat(formData.salario_base) || 0
       const subsidioAlimentacao = parseFloat(formData.subsidio_alimentacao) || 0
       const subsidioTransporte = parseFloat(formData.subsidio_transporte) || 0
-      const horasExtras = parseFloat(formData.horas_extras) || 0
+      const horasExtra = parseInt(formData.horas_extra) || 0
+      const valorHorasExtra = parseFloat(formData.valor_horas_extra) || 0
       const bonus = parseFloat(formData.bonus) || 0
-      const outrosRendimentos = parseFloat(formData.outros_rendimentos) || 0
+      const comissoes = parseFloat(formData.comissoes) || 0
+      const outrosSubsidios = parseFloat(formData.outros_subsidios) || 0
       const inssTrabalador = parseFloat(formData.inss_trabalhador) || 0
       const irps = parseFloat(formData.irps) || 0
-      const faltasDesconto = parseFloat(formData.faltas_desconto) || 0
+      const faltas = parseInt(formData.faltas) || 0
+      const descontoFaltas = parseFloat(formData.desconto_faltas) || 0
+      const diasTrabalhados = parseInt(formData.dias_trabalhados) || 22
       const adiantamentos = parseFloat(formData.adiantamentos) || 0
-      const outrasDeducoes = parseFloat(formData.outras_deducoes) || 0
+      const outrosDescontos = parseFloat(formData.outros_descontos) || 0
 
-      const totalRendimentos = salarioBase + subsidioAlimentacao + subsidioTransporte + horasExtras + bonus + outrosRendimentos
-      const totalDeducoes = inssTrabalador + irps + faltasDesconto + adiantamentos + outrasDeducoes
-      const salarioLiquido = totalRendimentos - totalDeducoes
-      const inssPatronal = salarioBase * 0.04
+      const totalBruto = salarioBase + subsidioAlimentacao + subsidioTransporte + valorHorasExtra + bonus + comissoes + outrosSubsidios
+      const totalDescontos = inssTrabalador + irps + descontoFaltas + adiantamentos + outrosDescontos
+      const salarioLiquido = totalBruto - totalDescontos
+      const inssEmpresa = salarioBase * 0.04
 
       const dataToSave = {
         empresa_id: empresaId,
@@ -248,17 +262,21 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
         salario_base: salarioBase,
         subsidio_alimentacao: subsidioAlimentacao,
         subsidio_transporte: subsidioTransporte,
-        horas_extras: horasExtras,
+        horas_extra: horasExtra,
+        valor_horas_extra: valorHorasExtra,
         bonus: bonus,
-        outros_rendimentos: outrosRendimentos,
+        comissoes: comissoes,
+        outros_subsidios: outrosSubsidios,
         inss_trabalhador: inssTrabalador,
         irps: irps,
-        faltas_desconto: faltasDesconto,
+        faltas: faltas,
+        desconto_faltas: descontoFaltas,
+        dias_trabalhados: diasTrabalhados,
         adiantamentos: adiantamentos,
-        outras_deducoes: outrasDeducoes,
-        inss_patronal: inssPatronal,
-        total_rendimentos: totalRendimentos,
-        total_deducoes: totalDeducoes,
+        outros_descontos: outrosDescontos,
+        inss_empresa: inssEmpresa,
+        total_bruto: totalBruto,
+        total_descontos: totalDescontos,
         salario_liquido: salarioLiquido,
         observacoes: formData.observacoes || null,
         estado: "pendente",
@@ -303,14 +321,18 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
       salario_base: "",
       subsidio_alimentacao: "0",
       subsidio_transporte: "0",
-      horas_extras: "0",
+      horas_extra: "0",
+      valor_horas_extra: "0",
       bonus: "0",
-      outros_rendimentos: "0",
+      comissoes: "0",
+      outros_subsidios: "0",
       inss_trabalhador: "0",
       irps: "0",
-      faltas_desconto: "0",
+      faltas: "0",
+      desconto_faltas: "0",
+      dias_trabalhados: "22",
       adiantamentos: "0",
-      outras_deducoes: "0",
+      outros_descontos: "0",
       observacoes: "",
     })
     setEditingId(null)
@@ -321,7 +343,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
     const funcionario = funcionarios.find((f) => f.id === funcionarioId)
     if (funcionario) {
       const salarioBase = funcionario.salario_base || 0
-      const deducoes = calcularDeducoes(salarioBase, 0, 0, 0)
+      const deducoes = calcularDeducoes(salarioBase, 0, 0, 0, 0)
       setFormData({
         ...formData,
         funcionario_id: funcionarioId,
@@ -335,10 +357,11 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
   // FIX #5: recalcular quando salário base muda
   const handleSalarioChange = (salarioStr: string) => {
     const salarioBase = parseFloat(salarioStr) || 0
-    const horasExtras = parseFloat(formData.horas_extras) || 0
+    const valorHorasExtra = parseFloat(formData.valor_horas_extra) || 0
     const bonus = parseFloat(formData.bonus) || 0
-    const outrosRendimentos = parseFloat(formData.outros_rendimentos) || 0
-    const deducoes = calcularDeducoes(salarioBase, horasExtras, bonus, outrosRendimentos)
+    const comissoes = parseFloat(formData.comissoes) || 0
+    const outrosSubsidios = parseFloat(formData.outros_subsidios) || 0
+    const deducoes = calcularDeducoes(salarioBase, valorHorasExtra, bonus, comissoes, outrosSubsidios)
     setFormData({
       ...formData,
       salario_base: salarioStr,
@@ -347,16 +370,17 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
     })
   }
 
-  // FIX #5: recalcular IRPS quando horas extras mudam (afectam rendimento colectável)
-  const handleHorasExtrasChange = (val: string) => {
+  // FIX #5: recalcular IRPS quando valor horas extras muda (afecta rendimento colectável)
+  const handleValorHorasExtraChange = (val: string) => {
     const salarioBase = parseFloat(formData.salario_base) || 0
-    const horasExtras = parseFloat(val) || 0
+    const valorHorasExtra = parseFloat(val) || 0
     const bonus = parseFloat(formData.bonus) || 0
-    const outrosRendimentos = parseFloat(formData.outros_rendimentos) || 0
-    const deducoes = calcularDeducoes(salarioBase, horasExtras, bonus, outrosRendimentos)
+    const comissoes = parseFloat(formData.comissoes) || 0
+    const outrosSubsidios = parseFloat(formData.outros_subsidios) || 0
+    const deducoes = calcularDeducoes(salarioBase, valorHorasExtra, bonus, comissoes, outrosSubsidios)
     setFormData({
       ...formData,
-      horas_extras: val,
+      valor_horas_extra: val,
       irps: deducoes.irps.toFixed(2),
     })
   }
@@ -364,10 +388,11 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
   // FIX #5: recalcular IRPS quando bónus muda
   const handleBonusChange = (val: string) => {
     const salarioBase = parseFloat(formData.salario_base) || 0
-    const horasExtras = parseFloat(formData.horas_extras) || 0
+    const valorHorasExtra = parseFloat(formData.valor_horas_extra) || 0
     const bonus = parseFloat(val) || 0
-    const outrosRendimentos = parseFloat(formData.outros_rendimentos) || 0
-    const deducoes = calcularDeducoes(salarioBase, horasExtras, bonus, outrosRendimentos)
+    const comissoes = parseFloat(formData.comissoes) || 0
+    const outrosSubsidios = parseFloat(formData.outros_subsidios) || 0
+    const deducoes = calcularDeducoes(salarioBase, valorHorasExtra, bonus, comissoes, outrosSubsidios)
     setFormData({
       ...formData,
       bonus: val,
@@ -375,16 +400,32 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
     })
   }
 
-  // FIX #5: recalcular IRPS quando outros rendimentos mudam
-  const handleOutrosRendimentosChange = (val: string) => {
+  // FIX #5: recalcular IRPS quando comissões mudam
+  const handleComissoesChange = (val: string) => {
     const salarioBase = parseFloat(formData.salario_base) || 0
-    const horasExtras = parseFloat(formData.horas_extras) || 0
+    const valorHorasExtra = parseFloat(formData.valor_horas_extra) || 0
     const bonus = parseFloat(formData.bonus) || 0
-    const outrosRendimentos = parseFloat(val) || 0
-    const deducoes = calcularDeducoes(salarioBase, horasExtras, bonus, outrosRendimentos)
+    const comissoes = parseFloat(val) || 0
+    const outrosSubsidios = parseFloat(formData.outros_subsidios) || 0
+    const deducoes = calcularDeducoes(salarioBase, valorHorasExtra, bonus, comissoes, outrosSubsidios)
     setFormData({
       ...formData,
-      outros_rendimentos: val,
+      comissoes: val,
+      irps: deducoes.irps.toFixed(2),
+    })
+  }
+
+  // FIX #5: recalcular IRPS quando outros subsidios mudam
+  const handleOutrosSubsidiosChange = (val: string) => {
+    const salarioBase = parseFloat(formData.salario_base) || 0
+    const valorHorasExtra = parseFloat(formData.valor_horas_extra) || 0
+    const bonus = parseFloat(formData.bonus) || 0
+    const comissoes = parseFloat(formData.comissoes) || 0
+    const outrosSubsidios = parseFloat(val) || 0
+    const deducoes = calcularDeducoes(salarioBase, valorHorasExtra, bonus, comissoes, outrosSubsidios)
+    setFormData({
+      ...formData,
+      outros_subsidios: val,
       irps: deducoes.irps.toFixed(2),
     })
   }
@@ -417,7 +458,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
       }
 
       if (novoEstado === "processado") {
-        updates.data_processamento = new Date().toISOString()
+        updates.data_aprovacao = new Date().toISOString()
       } else if (novoEstado === "pago") {
         updates.data_pagamento = new Date().toISOString()
 
@@ -463,7 +504,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
             ? {
               ...f,
               estado: novoEstado,
-              data_processamento: updates.data_processamento || f.data_processamento,
+              data_aprovacao: updates.data_aprovacao || f.data_aprovacao,
               data_pagamento: updates.data_pagamento || f.data_pagamento,
             }
             : f
@@ -495,7 +536,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
         .from("folha_salarios")
         .update({
           estado: "processado",
-          data_processamento: now,
+          data_aprovacao: now,
           updated_at: now,
         })
         .in(
@@ -508,7 +549,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
       setFolhaSalarios(
         folhaSalarios.map((f) =>
           pendentes.find((p) => p.id === f.id)
-            ? { ...f, estado: "processado" as const, data_processamento: now }
+            ? { ...f, estado: "processado" as const, data_aprovacao: now }
             : f
         )
       )
@@ -770,15 +811,24 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                         onChange={(e) => setFormData({ ...formData, subsidio_transporte: e.target.value })}
                       />
                     </div>
-                    {/* FIX #5: horas extras afectam IRPS — usa handler dedicado */}
                     <div className="space-y-2">
-                      <Label htmlFor="horas_extras">Horas Extras</Label>
+                      <Label htmlFor="horas_extra">Qtd. Horas Extras</Label>
                       <Input
-                        id="horas_extras"
+                        id="horas_extra"
+                        type="number"
+                        value={formData.horas_extra}
+                        onChange={(e) => setFormData({ ...formData, horas_extra: e.target.value })}
+                      />
+                    </div>
+                    {/* FIX #5: valor horas extras afecta IRPS — usa handler dedicado */}
+                    <div className="space-y-2">
+                      <Label htmlFor="valor_horas_extra">Valor Horas Extras</Label>
+                      <Input
+                        id="valor_horas_extra"
                         type="number"
                         step="0.01"
-                        value={formData.horas_extras}
-                        onChange={(e) => handleHorasExtrasChange(e.target.value)}
+                        value={formData.valor_horas_extra}
+                        onChange={(e) => handleValorHorasExtraChange(e.target.value)}
                       />
                     </div>
                     {/* FIX #5: bónus afecta IRPS — usa handler dedicado */}
@@ -792,15 +842,25 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                         onChange={(e) => handleBonusChange(e.target.value)}
                       />
                     </div>
-                    {/* FIX #5: outros rendimentos afectam IRPS — usa handler dedicado */}
                     <div className="space-y-2">
-                      <Label htmlFor="outros_rendimentos">Outros Rendimentos</Label>
+                      <Label htmlFor="comissoes">Comissões</Label>
                       <Input
-                        id="outros_rendimentos"
+                        id="comissoes"
                         type="number"
                         step="0.01"
-                        value={formData.outros_rendimentos}
-                        onChange={(e) => handleOutrosRendimentosChange(e.target.value)}
+                        value={formData.comissoes}
+                        onChange={(e) => handleComissoesChange(e.target.value)}
+                      />
+                    </div>
+                    {/* FIX #5: outros subsidios afectam IRPS — usa handler dedicado */}
+                    <div className="space-y-2">
+                      <Label htmlFor="outros_subsidios">Outros Subsídios</Label>
+                      <Input
+                        id="outros_subsidios"
+                        type="number"
+                        step="0.01"
+                        value={formData.outros_subsidios}
+                        onChange={(e) => handleOutrosSubsidiosChange(e.target.value)}
                       />
                     </div>
                   </div>
@@ -833,13 +893,22 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="faltas_desconto">Descontos por Faltas</Label>
+                      <Label htmlFor="faltas">Dias de Faltas</Label>
                       <Input
-                        id="faltas_desconto"
+                        id="faltas"
+                        type="number"
+                        value={formData.faltas}
+                        onChange={(e) => setFormData({ ...formData, faltas: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="desconto_faltas">Desconto por Faltas</Label>
+                      <Input
+                        id="desconto_faltas"
                         type="number"
                         step="0.01"
-                        value={formData.faltas_desconto}
-                        onChange={(e) => setFormData({ ...formData, faltas_desconto: e.target.value })}
+                        value={formData.desconto_faltas}
+                        onChange={(e) => setFormData({ ...formData, desconto_faltas: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -853,13 +922,13 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="outras_deducoes">Outras Deduções</Label>
+                      <Label htmlFor="outros_descontos">Outros Descontos</Label>
                       <Input
-                        id="outras_deducoes"
+                        id="outros_descontos"
                         type="number"
                         step="0.01"
-                        value={formData.outras_deducoes}
-                        onChange={(e) => setFormData({ ...formData, outras_deducoes: e.target.value })}
+                        value={formData.outros_descontos}
+                        onChange={(e) => setFormData({ ...formData, outros_descontos: e.target.value })}
                       />
                     </div>
                   </div>
@@ -870,16 +939,16 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                   <h4 className="font-medium mb-3">Resumo</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Total Rendimentos</p>
-                      <p className="font-semibold text-green-600">{formatCurrency(calculatedValues.totalRendimentos)}</p>
+                      <p className="text-muted-foreground">Total Bruto</p>
+                      <p className="font-semibold text-green-600">{formatCurrency(calculatedValues.totalBruto)}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Total Deduções</p>
-                      <p className="font-semibold text-red-600">{formatCurrency(calculatedValues.totalDeducoes)}</p>
+                      <p className="text-muted-foreground">Total Descontos</p>
+                      <p className="font-semibold text-red-600">{formatCurrency(calculatedValues.totalDescontos)}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">INSS Patronal (4%)</p>
-                      <p className="font-semibold">{formatCurrency(calculatedValues.inssPatronal)}</p>
+                      <p className="text-muted-foreground">INSS Empresa (4%)</p>
+                      <p className="font-semibold">{formatCurrency(calculatedValues.inssEmpresa)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Salário Líquido</p>
@@ -928,8 +997,8 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
               <TableHead>Funcionário</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead className="text-right">Salário Base</TableHead>
-              <TableHead className="text-right">Total Rendimentos</TableHead>
-              <TableHead className="text-right">Total Deduções</TableHead>
+              <TableHead className="text-right">Total Bruto</TableHead>
+              <TableHead className="text-right">Total Descontos</TableHead>
               <TableHead className="text-right">Salário Líquido</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acções</TableHead>
@@ -950,8 +1019,8 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                   <TableCell className="font-medium">{folha.funcionario?.nome || "-"}</TableCell>
                   <TableCell>{folha.funcionario?.cargo || "-"}</TableCell>
                   <TableCell className="text-right">{formatCurrency(folha.salario_base)}</TableCell>
-                  <TableCell className="text-right text-green-600">{formatCurrency(folha.total_rendimentos)}</TableCell>
-                  <TableCell className="text-right text-red-600">{formatCurrency(folha.total_deducoes)}</TableCell>
+                  <TableCell className="text-right text-green-600">{formatCurrency(folha.total_bruto)}</TableCell>
+                  <TableCell className="text-right text-red-600">{formatCurrency(folha.total_descontos)}</TableCell>
                   <TableCell className="text-right font-semibold">{formatCurrency(folha.salario_liquido)}</TableCell>
                   <TableCell>{getEstadoBadge(folha.estado)}</TableCell>
                   <TableCell className="text-right">
@@ -1034,15 +1103,19 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                     </div>
                     <div className="flex justify-between">
                       <span>Horas Extras:</span>
-                      <span>{formatCurrency(viewingFolha.horas_extras)}</span>
+                      <span>{formatCurrency(viewingFolha.valor_horas_extra)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Bónus:</span>
                       <span>{formatCurrency(viewingFolha.bonus)}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Comissões:</span>
+                      <span>{formatCurrency(viewingFolha.comissoes)}</span>
+                    </div>
                     <div className="flex justify-between font-medium border-t pt-1">
                       <span>Total:</span>
-                      <span>{formatCurrency(viewingFolha.total_rendimentos)}</span>
+                      <span>{formatCurrency(viewingFolha.total_bruto)}</span>
                     </div>
                   </div>
                 </div>
@@ -1060,19 +1133,19 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                     </div>
                     <div className="flex justify-between">
                       <span>Faltas:</span>
-                      <span>{formatCurrency(viewingFolha.faltas_desconto)}</span>
+                      <span>{formatCurrency(viewingFolha.desconto_faltas)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Adiantamentos:</span>
                       <span>{formatCurrency(viewingFolha.adiantamentos)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Outras:</span>
-                      <span>{formatCurrency(viewingFolha.outras_deducoes)}</span>
+                      <span>Outros:</span>
+                      <span>{formatCurrency(viewingFolha.outros_descontos)}</span>
                     </div>
                     <div className="flex justify-between font-medium border-t pt-1">
                       <span>Total:</span>
-                      <span>{formatCurrency(viewingFolha.total_deducoes)}</span>
+                      <span>{formatCurrency(viewingFolha.total_descontos)}</span>
                     </div>
                   </div>
                 </div>
@@ -1084,14 +1157,14 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                   <span className="font-bold text-xl">{formatCurrency(viewingFolha.salario_liquido)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm text-muted-foreground mt-2">
-                  <span>INSS Patronal (4%):</span>
-                  <span>{formatCurrency(viewingFolha.inss_patronal)}</span>
+                  <span>INSS Empresa (4%):</span>
+                  <span>{formatCurrency(viewingFolha.inss_empresa)}</span>
                 </div>
               </div>
 
-              {viewingFolha.data_processamento && (
+              {viewingFolha.data_aprovacao && (
                 <p className="text-xs text-muted-foreground">
-                  Processado em: {formatDate(viewingFolha.data_processamento)}
+                  Aprovado em: {formatDate(viewingFolha.data_aprovacao)}
                 </p>
               )}
               {viewingFolha.data_pagamento && (
