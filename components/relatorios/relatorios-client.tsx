@@ -117,7 +117,7 @@ export function RelatoriosClient({
   const salariosFiltrадos = useMemo(() => {
     if (!folhaSalarios || folhaSalarios.length === 0) return []
     return folhaSalarios.filter((fs) => {
-      if (fs.estado !== "pago") return false
+      if (fs.estado !== "Pago") return false
       if (periodoResumo === "mes") {
         return fs.mes === (hoje.getMonth() + 1) && fs.ano === anoActual
       }
@@ -164,7 +164,7 @@ export function RelatoriosClient({
 
       // Incluir salários pagos no mês se disponíveis
       const sal = (folhaSalarios || [])
-        .filter((fs: any) => fs.estado === "pago" && fs.ano === ano && (fs.mes - 1) === mes)
+        .filter((fs: any) => fs.estado === "Pago" && fs.ano === ano && (fs.mes - 1) === mes)
         .reduce((a: number, fs: any) => a + (Number(fs.total_bruto) || 0), 0)
 
       meses.push({ mes: mesLabel, receita: rec - nc, despesas: desp + sal, lucro: rec - nc - desp - sal })

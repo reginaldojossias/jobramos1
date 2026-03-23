@@ -55,7 +55,7 @@ interface FolhaSalario {
   total_bruto: number
   total_descontos: number
   salario_liquido: number
-  estado: "pendente" | "processado" | "pago" | "cancelado"
+  estado: "Pendente" | "Processado" | "Pago"
   data_aprovacao: string | null
   data_pagamento: string | null
   observacoes: string | null
@@ -201,9 +201,9 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
       totalBruto: folhasMes.reduce((acc, f) => acc + f.total_bruto, 0),
       totalLiquido: folhasMes.reduce((acc, f) => acc + f.salario_liquido, 0),
       totalDescontos: folhasMes.reduce((acc, f) => acc + f.total_descontos, 0),
-      pendentes: folhasMes.filter((f) => f.estado === "pendente").length,
-      processados: folhasMes.filter((f) => f.estado === "processado").length,
-      pagos: folhasMes.filter((f) => f.estado === "pago").length,
+      pendentes: folhasMes.filter((f) => f.estado === "Pendente").length,
+      processados: folhasMes.filter((f) => f.estado === "Processado").length,
+      pagos: folhasMes.filter((f) => f.estado === "Pago").length,
     }
   }, [folhaSalarios, selectedMes, selectedAno])
 
@@ -279,7 +279,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
         total_descontos: totalDescontos,
         salario_liquido: salarioLiquido,
         observacoes: formData.observacoes || null,
-        estado: "pendente",
+        estado: "Pendente",
       }
 
       if (editingId) {
@@ -434,7 +434,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
   const handleAbrirPagamento = (folhaId: string) => {
     if (contasBancarias.length === 0) {
       // Sem contas disponíveis — pagar sem movimento bancário
-      handleChangeEstado(folhaId, "pago", null)
+      handleChangeEstado(folhaId, "Pago", null)
       return
     }
     setPagamentoContaId(contasBancarias[0]?.id || "")
@@ -443,7 +443,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
 
   const handleConfirmarPagamento = async () => {
     if (!pagamentoModal.folhaId) return
-    await handleChangeEstado(pagamentoModal.folhaId, "pago", pagamentoContaId || null)
+    await handleChangeEstado(pagamentoModal.folhaId, "Pago", pagamentoContaId || null)
     setPagamentoModal({ open: false, folhaId: null })
   }
 
@@ -457,9 +457,9 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
         updated_at: new Date().toISOString(),
       }
 
-      if (novoEstado === "processado") {
+      if (novoEstado === "Processado") {
         updates.data_aprovacao = new Date().toISOString()
-      } else if (novoEstado === "pago") {
+      } else if (novoEstado === "Pago") {
         updates.data_pagamento = new Date().toISOString()
 
         // FIX Bug #6: criar movimento bancário de débito ao pagar
@@ -519,7 +519,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
   }
 
   const handleProcessarTodos = async () => {
-    const pendentes = filteredFolhaSalarios.filter((f) => f.estado === "pendente")
+    const pendentes = filteredFolhaSalarios.filter((f) => f.estado === "Pendente")
     if (pendentes.length === 0) {
       alert("Não há folhas pendentes para processar")
       return
@@ -535,7 +535,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
       const { error } = await supabase
         .from("folha_salarios")
         .update({
-          estado: "processado",
+          estado: "Processado",
           data_aprovacao: now,
           updated_at: now,
         })
@@ -549,7 +549,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
       setFolhaSalarios(
         folhaSalarios.map((f) =>
           pendentes.find((p) => p.id === f.id)
-            ? { ...f, estado: "processado" as const, data_aprovacao: now }
+            ? { ...f, estado: "Processado" as const, data_aprovacao: now }
             : f
         )
       )
@@ -580,28 +580,22 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
-      case "pendente":
+      case "Pendente":
         return (
           <Badge className="bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20">
             <Clock className="mr-1 h-3 w-3" /> Pendente
           </Badge>
         )
-      case "processado":
+      case "Processado":
         return (
           <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20">
             <CheckCircle className="mr-1 h-3 w-3" /> Processado
           </Badge>
         )
-      case "pago":
+      case "Pago":
         return (
           <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20">
             <Banknote className="mr-1 h-3 w-3" /> Pago
-          </Badge>
-        )
-      case "cancelado":
-        return (
-          <Badge className="bg-red-500/10 text-red-600 hover:bg-red-500/20">
-            <XCircle className="mr-1 h-3 w-3" /> Cancelado
           </Badge>
         )
       default:
@@ -1033,18 +1027,18 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {folha.estado === "pendente" && (
+                      {folha.estado === "Pendente" && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleChangeEstado(folha.id, "processado")}
+                          onClick={() => handleChangeEstado(folha.id, "Processado")}
                           disabled={loadingStates[folha.id]}
                           title="Processar"
                         >
                           <CheckCircle className="h-4 w-4 text-blue-600" />
                         </Button>
                       )}
-                      {folha.estado === "processado" && (
+                      {folha.estado === "Processado" && (
                         <Button
                           variant="ghost"
                           size="sm"
