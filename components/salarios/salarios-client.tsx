@@ -269,7 +269,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
           .from("folha_salarios")
           .update({ ...dataToSave, updated_at: new Date().toISOString() })
           .eq("id", editingId)
-          .select(`*, funcionario:funcionarios(id, nome, cargo, salario_base, inss)`)
+          .select(`*, funcionario:funcionarios!folha_salarios_funcionario_id_fkey(id, nome, cargo, salario_base, inss)`)
           .single()
 
         if (error) throw error
@@ -278,7 +278,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
         const { data, error } = await supabase
           .from("folha_salarios")
           .insert(dataToSave)
-          .select(`*, funcionario:funcionarios(id, nome, cargo, salario_base, inss)`)
+          .select(`*, funcionario:funcionarios!folha_salarios_funcionario_id_fkey(id, nome, cargo, salario_base, inss)`)
           .single()
 
         if (error) throw error

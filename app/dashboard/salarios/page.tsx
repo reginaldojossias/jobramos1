@@ -50,11 +50,12 @@ export default async function SalariosPage() {
     .order("nome", { ascending: true })
 
   // Buscar folhas de salário com dados dos funcionários
+  // Usa !folha_salarios_funcionario_id_fkey para especificar qual FK usar (existem 3 FKs para funcionarios)
   const { data: folhaSalarios, error } = await supabase
     .from("folha_salarios")
     .select(`
       *,
-      funcionario:funcionarios(id, nome, cargo, salario_base, inss)
+      funcionario:funcionarios!folha_salarios_funcionario_id_fkey(id, nome, cargo, salario_base, inss)
     `)
     .eq("empresa_id", empresaId)
     .order("ano", { ascending: false })
