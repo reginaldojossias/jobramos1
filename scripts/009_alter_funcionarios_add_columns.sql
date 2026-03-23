@@ -1,0 +1,14 @@
+-- Adicionar novas colunas à tabela funcionarios
+ALTER TABLE funcionarios 
+ADD COLUMN IF NOT EXISTS telefone_alternativo TEXT,
+ADD COLUMN IF NOT EXISTS data_nascimento DATE,
+ADD COLUMN IF NOT EXISTS data_admissao DATE,
+ADD COLUMN IF NOT EXISTS bi TEXT,
+ADD COLUMN IF NOT EXISTS nuit TEXT,
+ADD COLUMN IF NOT EXISTS salario_base DECIMAL(12, 2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS inss TEXT,
+ADD COLUMN IF NOT EXISTS endereco TEXT,
+ADD COLUMN IF NOT EXISTS nivel_academico TEXT,
+ADD COLUMN IF NOT EXISTS instituicao_ensino TEXT,
+ADD COLUMN IF NOT EXISTS doenca_cronica BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS descricao TEXT;
