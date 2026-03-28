@@ -23,7 +23,7 @@ interface CotacaoPrintProps {
   iva: number
   total: number
   diretorGeral?: string
-  notas?: string | null // Adicionei esta prop
+  notas?: string | null
   onClose: () => void
 }
 
@@ -34,11 +34,8 @@ export function CotacaoPrint({
   dataCotacao: initialDataCotacao,
   dataValidade: initialDataValidade,
   linhas: initialLinhas,
-  subtotal: initialSubtotal,
-  iva: initialIva,
-  total: initialTotal,
   diretorGeral = "Ramos Siquice",
-  notas, // Adicionei as notas
+  notas,
   onClose,
 }: CotacaoPrintProps) {
   const printRef = useRef<HTMLDivElement>(null)
@@ -52,128 +49,21 @@ export function CotacaoPrint({
   const [clienteTelefone, setClienteTelefone] = useState(cliente?.telefone || "")
   const [clienteNuit, setClienteNuit] = useState(cliente?.nuit || "")
   const [diretorGeralNome, setDiretorGeralNome] = useState(diretorGeral)
+  const [objecto, setObjecto] = useState("")
+  const [localidade, setLocalidade] = useState("Maputo")
 
-  // Recalcular totais quando linhas mudam
-  const subtotal = linhas.reduce((acc, linha) => acc + linha.preco_unitario * linha.quantidade, 0)
+  // Recalcular totais
+  const subtotal = linhas.reduce((acc, l) => acc + l.preco_unitario * l.quantidade, 0)
   const iva = subtotal * 0.16
   const total = subtotal + iva
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-MZ", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value)
-  }
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-MZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 
-  const formatDate = (dateStr: string) => {
+  const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return ""
-    const date = new Date(dateStr)
-    return date.toLocaleDateString("pt-MZ", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-  }
-
-  // Converter número para extenso em português
-  const numeroParaExtenso = (valor: number): string => {
-    const unidades = ["", "Um", "Dois", "Três", "Quatro", "Cinco", "Seis", "Sete", "Oito", "Nove"]
-    const especiais = [
-      "Dez",
-      "Onze",
-      "Doze",
-      "Treze",
-      "Catorze",
-      "Quinze",
-      "Dezasseis",
-      "Dezassete",
-      "Dezoito",
-      "Dezanove",
-    ]
-    const dezenas = ["", "", "Vinte", "Trinta", "Quarenta", "Cinquenta", "Sessenta", "Setenta", "Oitenta", "Noventa"]
-    const centenas = [
-      "",
-      "Cento",
-      "Duzentos",
-      "Trezentos",
-      "Quatrocentos",
-      "Quinhentos",
-      "Seiscentos",
-      "Setecentos",
-      "Oitocentos",
-      "Novecentos",
-    ]
-
-    const converterGrupo = (n: number): string => {
-      if (n === 0) return ""
-      if (n === 100) return "Cem"
-
-      let resultado = ""
-      const c = Math.floor(n / 100)
-      const d = Math.floor((n % 100) / 10)
-      const u = n % 10
-
-      if (c > 0) resultado += centenas[c]
-
-      if (n % 100 >= 10 && n % 100 <= 19) {
-        if (resultado) resultado += " e "
-        resultado += especiais[(n % 100) - 10]
-        return resultado
-      }
-
-      if (d > 1) {
-        if (resultado) resultado += " e "
-        resultado += dezenas[d]
-      }
-
-      if (u > 0) {
-        if (resultado) resultado += " e "
-        resultado += unidades[u]
-      }
-
-      return resultado
-    }
-
-    const parteInteira = Math.floor(valor)
-    const centavos = Math.round((valor - parteInteira) * 100)
-
-    if (parteInteira === 0 && centavos === 0) return "Zero Meticais"
-
-    let resultado = ""
-
-    const milhoes = Math.floor(parteInteira / 1000000)
-    const milhares = Math.floor((parteInteira % 1000000) / 1000)
-    const resto = parteInteira % 1000
-
-    if (milhoes > 0) {
-      resultado += converterGrupo(milhoes) + (milhoes === 1 ? " Milhão" : " Milhões")
-    }
-
-    if (milhares > 0) {
-      if (resultado) resultado += ", "
-      if (milhares === 1) {
-        resultado += "Mil"
-      } else {
-        resultado += converterGrupo(milhares) + " Mil"
-      }
-    }
-
-    if (resto > 0) {
-      if (resultado) resultado += resto < 100 ? " e " : ", "
-      resultado += converterGrupo(resto)
-    }
-
-    resultado += parteInteira === 1 ? " Metical" : " Meticais"
-
-    if (centavos > 0) {
-      resultado += " e " + converterGrupo(centavos) + (centavos === 1 ? " Centavo" : " Centavos")
-    }
-
-    return resultado
-  }
-
-  const handlePrint = () => {
-    window.print()
+    const d = new Date(dateStr)
+    return d.toLocaleDateString("pt-MZ", { day: "2-digit", month: "long", year: "numeric" })
   }
 
   const calcularValidadeDias = () => {
@@ -184,444 +74,485 @@ export function CotacaoPrint({
     return `${String(diff).padStart(2, "0")} Dias`
   }
 
-  const adicionarLinha = () => {
-    setLinhas([
-      ...linhas,
-      {
-        id: Date.now(),
-        produto_id: "",
-        descricao: "",
-        preco_unitario: 0,
-        quantidade: 1,
-      },
-    ])
+  // Número por extenso
+  const numeroParaExtenso = (valor: number): string => {
+    const unidades = ["", "Um", "Dois", "Três", "Quatro", "Cinco", "Seis", "Sete", "Oito", "Nove"]
+    const especiais = ["Dez", "Onze", "Doze", "Treze", "Catorze", "Quinze", "Dezasseis", "Dezassete", "Dezoito", "Dezanove"]
+    const dezenas = ["", "", "Vinte", "Trinta", "Quarenta", "Cinquenta", "Sessenta", "Setenta", "Oitenta", "Noventa"]
+    const centenas = ["", "Cento", "Duzentos", "Trezentos", "Quatrocentos", "Quinhentos", "Seiscentos", "Setecentos", "Oitocentos", "Novecentos"]
+
+    const converterGrupo = (n: number): string => {
+      if (n === 0) return ""
+      if (n === 100) return "Cem"
+      let res = ""
+      const c = Math.floor(n / 100)
+      const d = Math.floor((n % 100) / 10)
+      const u = n % 10
+      if (c > 0) res += centenas[c]
+      if (n % 100 >= 10 && n % 100 <= 19) {
+        if (res) res += " e "
+        res += especiais[(n % 100) - 10]
+        return res
+      }
+      if (d > 1) { if (res) res += " e "; res += dezenas[d] }
+      if (u > 0) { if (res) res += " e "; res += unidades[u] }
+      return res
+    }
+
+    const parteInteira = Math.floor(valor)
+    const centavos = Math.round((valor - parteInteira) * 100)
+    if (parteInteira === 0 && centavos === 0) return "Zero Meticais"
+    let res = ""
+    const milhoes = Math.floor(parteInteira / 1000000)
+    const milhares = Math.floor((parteInteira % 1000000) / 1000)
+    const resto = parteInteira % 1000
+    if (milhoes > 0) res += converterGrupo(milhoes) + (milhoes === 1 ? " Milhão" : " Milhões")
+    if (milhares > 0) {
+      if (res) res += ", "
+      res += milhares === 1 ? "Mil" : converterGrupo(milhares) + " Mil"
+    }
+    if (resto > 0) { if (res) res += resto < 100 ? " e " : ", "; res += converterGrupo(resto) }
+    res += parteInteira === 1 ? " Metical" : " Meticais"
+    if (centavos > 0) res += " e " + converterGrupo(centavos) + (centavos === 1 ? " Centavo" : " Centavos")
+    return res
   }
 
-  const removerLinha = (id: number) => {
-    setLinhas(linhas.filter((linha) => linha.id !== id))
-  }
+  const adicionarLinha = () =>
+    setLinhas([...linhas, { id: Date.now(), produto_id: "", descricao: "", preco_unitario: 0, quantidade: 1 }])
 
-  const atualizarLinha = (id: number, campo: keyof LinhaCotacao, valor: any) => {
-    setLinhas(
-      linhas.map((linha) =>
-        linha.id === id
-          ? { ...linha, [campo]: campo === "descricao" || campo === "produto_id" ? valor : Number(valor) }
-          : linha,
-      ),
-    )
-  }
+  const removerLinha = (id: number) => setLinhas(linhas.filter((l) => l.id !== id))
 
-  // Adicionar campo para editar o nome do Diretor Geral
-  const handleDiretorGeralChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDiretorGeralNome(e.target.value)
-  }
+  const atualizarLinha = (id: number, campo: keyof LinhaCotacao, valor: any) =>
+    setLinhas(linhas.map((l) =>
+      l.id === id ? { ...l, [campo]: campo === "descricao" || campo === "produto_id" ? valor : Number(valor) } : l
+    ))
 
-  // Função para dividir as notas em linhas
   const obterLinhasDeNotas = () => {
-    if (!notas || notas.trim() === "") {
-      return [{ id: 1, conteudo: "Nenhuma nota adicionada." }]
-    }
-    
-    // Dividir por quebras de linha e filtrar linhas vazias
-    const linhasNotas = notas.split('\n').filter(linha => linha.trim() !== '')
-    
-    // Se não houver linhas, retornar uma linha padrão
-    if (linhasNotas.length === 0) {
-      return [{ id: 1, conteudo: "Nenhuma nota adicionada." }]
-    }
-    
-    // Retornar linhas com IDs
-    return linhasNotas.map((conteudo, index) => ({
-      id: index + 1,
-      conteudo: conteudo.trim()
-    }))
+    if (!notas || notas.trim() === "") return [{ id: 1, conteudo: "Nenhuma nota adicionada." }]
+    const ls = notas.split("\n").filter((l) => l.trim() !== "")
+    if (ls.length === 0) return [{ id: 1, conteudo: "Nenhuma nota adicionada." }]
+    return ls.map((conteudo, i) => ({ id: i + 1, conteudo: conteudo.trim() }))
   }
-
   const linhasNotas = obterLinhasDeNotas()
 
+  // Preencher linhas vazias até mínimo de 5 para visual da tabela
+  const LINHAS_MIN = 5
+  const linhasVazias = Math.max(0, LINHAS_MIN - linhas.length)
+
+  const s: Record<string, React.CSSProperties> = {
+    page: {
+      background: "white",
+      width: "210mm",
+      minHeight: "297mm",
+      padding: "15mm",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: "#000",
+      boxSizing: "border-box",
+    },
+    // ── Header ──
+    header: { display: "flex", justifyContent: "space-between", marginBottom: "10px" },
+    companyBox: {
+      border: "1.5px solid #000",
+      borderRadius: "15px",
+      padding: "15px",
+      width: "48%",
+      fontSize: "11px",
+      lineHeight: "1.3",
+    },
+    logoArea: { display: "flex", alignItems: "center", marginBottom: "6px" },
+    logoText: { fontSize: "18px", fontWeight: "bold", color: "#1a3a5c", marginLeft: "8px", letterSpacing: "-0.5px", textTransform: "uppercase" },
+    companySubtitle: { fontSize: "9px", color: "#333", marginBottom: "4px", fontStyle: "italic" },
+    companyServices: { fontSize: "10px", color: "#004b87", marginBottom: "4px" },
+    rightHeader: { width: "48%", display: "flex", flexDirection: "column", justifyContent: "space-between" },
+    docTitleBox: {
+      border: "1.5px solid #000",
+      borderRadius: "10px",
+      padding: "10px",
+      textAlign: "center",
+      fontSize: "16px",
+      fontWeight: "bold",
+    },
+    clientBox: {
+      border: "1.5px solid #000",
+      borderRadius: "15px",
+      padding: "12px",
+      fontSize: "11px",
+      lineHeight: "1.6",
+      flexGrow: 1,
+      marginTop: "10px",
+    },
+    // ── Divider ──
+    divider: {
+      borderTop: "1.5px solid #000",
+      borderBottom: "1.5px solid #000",
+      height: "4px",
+      margin: "10px 0",
+    },
+    // ── Pre-table ──
+    preTableInfo: { display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "5px", fontWeight: "bold" },
+    // ── Table ──
+    table: { width: "100%", borderCollapse: "collapse" as const, fontSize: "11px", marginBottom: "10px" },
+    th: { border: "1px solid #000", padding: "4px 6px", backgroundColor: "#e6f0fa", fontWeight: "bold", textAlign: "center" as const },
+    td: { border: "1px solid #000", padding: "4px 6px" },
+    tdCenter: { border: "1px solid #000", padding: "4px 6px", textAlign: "center" as const },
+    tdRight: { border: "1px solid #000", padding: "4px 6px", textAlign: "right" as const },
+    // ── Summary ──
+    summaryArea: { display: "flex", justifyContent: "space-between", marginBottom: "15px", alignItems: "flex-start" },
+    taxReason: {
+      border: "1.5px solid #000",
+      width: "55%",
+      padding: "8px",
+      fontSize: "11px",
+      minHeight: "50px",
+    },
+    totalsTable: { width: "40%", borderCollapse: "collapse" as const },
+    totalsTableTd: { border: "1.5px solid #000", padding: "4px 8px", fontSize: "11px", fontWeight: "bold" },
+    // ── Footer details ──
+    footerDetails: { display: "flex", justifyContent: "space-between", marginBottom: "15px", alignItems: "flex-start" },
+    bankBoxes: { display: "flex", gap: "10px", width: "60%" },
+    bankBox: {
+      border: "1.5px solid #000",
+      borderRadius: "15px",
+      padding: "10px",
+      fontSize: "10px",
+      lineHeight: "1.4",
+      width: "50%",
+    },
+    signatureBox: {
+      width: "35%",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingTop: "30px",
+    },
+    sigLine: { width: "100%", borderBottom: "1px dotted #000", marginBottom: "5px" },
+    // ── Bottom footer ──
+    systemInfo: {
+      display: "flex",
+      justifyContent: "space-between",
+      borderTop: "1.5px solid #000",
+      borderBottom: "1.5px solid #000",
+      padding: "3px 0",
+      marginBottom: "8px",
+      fontSize: "11px",
+    },
+    editInput: {
+      background: "transparent",
+      border: "none",
+      borderBottom: "1px dashed #999",
+      outline: "none",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: "#000",
+      width: "100%",
+    },
+    editInputCenter: {
+      background: "transparent",
+      border: "none",
+      borderBottom: "1px dashed #999",
+      outline: "none",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: "#000",
+      textAlign: "center" as const,
+      width: "100%",
+    },
+    editInputRight: {
+      background: "transparent",
+      border: "none",
+      borderBottom: "1px dashed #999",
+      outline: "none",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: "#000",
+      textAlign: "right" as const,
+      width: "100%",
+    },
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-auto">
-      {/* Modal Container */}
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[95vh] overflow-auto">
-        {/* Modal Header - Only visible on screen */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between print:hidden z-10">
-          <h2 className="text-lg font-semibold">Pré-visualização da Cotação (Clique para editar)</h2>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full">
+
+        {/* ── Toolbar (screen only) ── */}
+        <div className="sticky top-0 bg-white border-b px-6 py-3 flex items-center justify-between print:hidden z-10">
+          <h2 className="text-base font-semibold text-gray-700">Pré-visualização — Clique nos campos para editar</h2>
           <div className="flex gap-2">
             <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-[#3b5998] text-white rounded-lg hover:bg-[#2d4373] transition-colors"
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-[#1a3a5c] text-white rounded hover:bg-[#2d4373] text-sm transition-colors"
             >
-              Imprimir / Guardar PDF
+              Imprimir / PDF
             </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
-            >
+            <button onClick={onClose} className="px-4 py-2 border rounded text-sm hover:bg-gray-50 transition-colors">
               Fechar
             </button>
           </div>
         </div>
 
-        {/* Print Content - Exact replica of the Magic Pro Services quotation */}
-        <div ref={printRef} className="p-8 print:p-0 bg-white" id="cotacao-print">
-          {/* ===== HEADER ===== */}
-          <div className="flex justify-between items-start mb-2">
-            {/* Left: Logo + Company Name */}
-            <div className="flex items-center gap-3">
-              {/* Logo */}
-              <Image
-                src="/images/magic-pro-logo.png"
-                alt="Magic Pro Services"
-                width={55}
-                height={55}
-                className="object-contain"
-              />
-              <div>
-                <h1 className="text-[#1a3a5c] text-xl font-bold tracking-wide uppercase">MAGIC PRO SERVICES</h1>
-                <p className="text-[#1a3a5c] text-[10px] italic">A Sua sastifação é o Nosso Objectivo</p>
+        {/* ── Printable area ── */}
+        <div ref={printRef} style={s.page} id="cotacao-print">
+
+          {/* ════ 1. HEADER ════ */}
+          <div style={s.header}>
+            {/* Left: Company box */}
+            <div style={s.companyBox}>
+              <div style={s.logoArea}>
+                <Image src="/images/magic-pro-logo.png" alt="Magic Pro Services" width={48} height={48} style={{ objectFit: "contain" }} />
+                <div style={s.logoText}>Magic Pro Services</div>
               </div>
+              <div style={s.companySubtitle}>A Sua Satisfação é o Nosso Objectivo</div>
+              <div style={s.companyServices}>Serviços | Consultoria | Soluções</div>
+              <div>Av: FPLM, Nº 1710, R/C-2 — Maputo</div>
+              <div>Tel.: 86 73 400 18 / 82 73 400 17</div>
+              <div>Email: info@magicproservices.com</div>
+              <div>NUIT: {empresa?.nuit || "—"}</div>
             </div>
 
-            {/* Right: Cotação title */}
-            <div>
-              <h2 className="text-[#4a6fa5] text-3xl font-serif italic border-b-2 border-[#3b5998] pb-1">Cotação</h2>
-            </div>
-          </div>
-
-          {/* ===== COMPANY INFO + DOCUMENT INFO ===== */}
-          <div className="flex justify-between mb-4 text-[11px]">
-            {/* Left: Company Details */}
-            <div className="text-[#1a3a5c] leading-relaxed">
-              <p className="font-bold">Magic Pro Services</p>
-              <p>Av: FPLM, Nº 1710, R/C-2</p>
-              <p>Cidade: Maputo - Cidade</p>
-              <p>Tel: 86 73 400 18 / 82 73 40 017</p>
-              <p className="mt-1">Email: Info@magicproservices.com / Rlsiquice@magicproservices.com</p>
-            </div>
-
-            {/* Right: Document Info - Editável */}
-            <div className="text-[#1a3a5c] text-[11px]">
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold">Data:</span>
-                <input
-                  type="date"
-                  value={dataCotacao}
-                  onChange={(e) => setDataCotacao(e.target.value)}
-                  className="border-b border-gray-400 bg-transparent text-center print:border-gray-400 focus:outline-none focus:ring-0 focus:border-[#3b5998] px-1 ml-2"
-                />
-              </div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold">Cotação Nº</span>
+            {/* Right: Doc title + Client */}
+            <div style={s.rightHeader}>
+              <div style={s.docTitleBox}>
+                <span style={{ color: "#d32f2f" }}>Cotação nº&nbsp;</span>
                 <input
                   type="text"
                   value={numeroCotacao}
                   onChange={(e) => setNumeroCotacao(e.target.value)}
-                  className="w-20 border-b border-gray-400 bg-transparent text-center print:border-gray-400 focus:outline-none focus:ring-0 focus:border-[#3b5998] px-1 ml-2"
+                  style={{ ...s.editInputCenter, width: "80px", display: "inline", fontWeight: "bold", fontSize: "16px" }}
                 />
               </div>
-              <div className="flex justify-between items-center">
-                <span className="font-semibold">Validade :</span>
-                <span className="ml-2">{calcularValidadeDias()}</span>
+              <div style={s.clientBox}>
+                <div style={{ marginBottom: "3px" }}>
+                  <span style={{ fontWeight: "bold" }}>Ex. Senhor(a): </span>
+                  <input type="text" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)}
+                    style={{ ...s.editInput, width: "calc(100% - 100px)", display: "inline" }}
+                    placeholder="Nome / Empresa" />
+                </div>
+                <div style={{ marginBottom: "3px" }}>
+                  <span style={{ fontWeight: "bold" }}>Endereço: </span>
+                  <input type="text" value={clienteEndereco} onChange={(e) => setClienteEndereco(e.target.value)}
+                    style={{ ...s.editInput, width: "calc(100% - 70px)", display: "inline" }}
+                    placeholder="Endereço" />
+                </div>
+                <div style={{ marginBottom: "3px" }}>
+                  <span style={{ fontWeight: "bold" }}>NUIT: </span>
+                  <input type="text" value={clienteNuit} onChange={(e) => setClienteNuit(e.target.value)}
+                    style={{ ...s.editInput, width: "calc(100% - 45px)", display: "inline" }}
+                    placeholder="NUIT" />
+                </div>
+                <div>
+                  <span style={{ fontWeight: "bold" }}>Tel./Cel: </span>
+                  <input type="text" value={clienteTelefone} onChange={(e) => setClienteTelefone(e.target.value)}
+                    style={{ ...s.editInput, width: "calc(100% - 65px)", display: "inline" }}
+                    placeholder="Telefone" />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ===== COTAÇÃO PARA (CLIENT SECTION) - Editável ===== */}
-          <div className="border border-[#3b5998] mb-4">
-            {/* Blue header */}
-            <div className="bg-[#3b5998] text-white px-3 py-1 text-[11px] font-semibold text-center">Cotação Para:</div>
-            {/* Client details */}
-            <div className="p-3 text-[11px] space-y-1">
-              <div className="flex items-baseline">
-                <span className="font-semibold w-20 text-[#1a3a5c] italic">Empresa:</span>
-                <input
-                  type="text"
-                  value={clienteNome}
-                  onChange={(e) => setClienteNome(e.target.value)}
-                  className="flex-1 border-b border-gray-400 bg-transparent text-gray-700 italic ml-1 focus:outline-none focus:border-[#3b5998] print:border-gray-400"
-                  placeholder="Nome da empresa"
-                />
-              </div>
-              <div className="flex items-baseline">
-                <span className="font-semibold w-20 text-[#1a3a5c] italic">Endereço:</span>
-                <input
-                  type="text"
-                  value={clienteEndereco}
-                  onChange={(e) => setClienteEndereco(e.target.value)}
-                  className="flex-1 border-b border-gray-400 bg-transparent text-gray-700 italic ml-1 focus:outline-none focus:border-[#3b5998] print:border-gray-400"
-                  placeholder="Endereço"
-                />
-              </div>
-              <div className="flex items-baseline">
-                <span className="font-semibold w-20 text-[#1a3a5c] italic">Tel:</span>
-                <input
-                  type="text"
-                  value={clienteTelefone}
-                  onChange={(e) => setClienteTelefone(e.target.value)}
-                  className="flex-1 border-b border-gray-400 bg-transparent text-gray-700 ml-1 focus:outline-none focus:border-[#3b5998] print:border-gray-400"
-                  placeholder="Telefone"
-                />
-              </div>
-              <div className="flex items-baseline">
-                <span className="font-semibold w-20 text-[#1a3a5c] italic">Nuit:</span>
-                <input
-                  type="text"
-                  value={clienteNuit}
-                  onChange={(e) => setClienteNuit(e.target.value)}
-                  className="flex-1 border-b border-gray-400 bg-transparent text-gray-700 ml-1 focus:outline-none focus:border-[#3b5998] print:border-gray-400"
-                  placeholder="NUIT"
-                />
-              </div>
+          {/* ════ 2. DOUBLE DIVIDER ════ */}
+          <div style={s.divider} />
+
+          {/* ════ 3. PRE-TABLE INFO ════ */}
+          <div style={s.preTableInfo}>
+            <div>
+              <span style={{ color: "#d32f2f", fontWeight: "normal" }}>Objecto:&nbsp;</span>
+              <input type="text" value={objecto} onChange={(e) => setObjecto(e.target.value)}
+                style={{ ...s.editInput, width: "250px", display: "inline", fontWeight: "normal" }}
+                placeholder="Descrição do objecto..." />
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <input type="text" value={localidade} onChange={(e) => setLocalidade(e.target.value)}
+                style={{ ...s.editInput, width: "80px", display: "inline" }} />
+              <span>:</span>
+              <input type="date" value={dataCotacao} onChange={(e) => setDataCotacao(e.target.value)}
+                style={{ ...s.editInput, width: "130px", display: "inline" }} />
             </div>
           </div>
 
-          {/* ===== ITEMS TABLE - Editável ===== */}
-          <table className="w-full border-collapse text-[11px] mb-2">
+          {/* ════ 4. MAIN TABLE ════ */}
+          <table style={s.table}>
             <thead>
               <tr>
-                <th className="border border-[#3b5998] px-2 py-1.5 text-center font-semibold text-[#1a3a5c] w-12 bg-white">
-                  Item
-                </th>
-                <th className="border border-[#3b5998] px-2 py-1.5 text-center font-semibold text-[#1a3a5c] bg-white">
-                  Descrição
-                </th>
-                <th className="border border-[#3b5998] px-2 py-1.5 text-center font-semibold text-[#1a3a5c] w-12 bg-white">
-                  Qtd.
-                </th>
-                <th className="border border-[#3b5998] px-2 py-1.5 text-center font-semibold text-[#1a3a5c] w-20 bg-white">
-                  P. Unit
-                </th>
-                <th className="border border-[#3b5998] px-2 py-1.5 text-center font-semibold text-[#1a3a5c] w-24 bg-white">
-                  P. Total
-                </th>
-                <th className="border border-[#3b5998] px-2 py-1.5 text-center font-semibold text-[#1a3a5c] w-8 bg-white print:hidden">
-                  Acções
-                </th>
+                <th style={{ ...s.th, width: "5%" }}>Ord.</th>
+                <th style={{ ...s.th, width: "55%", textAlign: "left" }}>Descrição</th>
+                <th style={{ ...s.th, width: "8%" }}>Qy</th>
+                <th style={{ ...s.th, width: "15%" }}>P.U</th>
+                <th style={{ ...s.th, width: "17%" }}>Valor</th>
+                <th style={{ ...s.th, width: "5%" }} className="print:hidden">—</th>
               </tr>
             </thead>
             <tbody>
-              {linhas.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="border border-[#3b5998] px-2 py-4 text-center text-gray-400">
-                    Nenhum item adicionado
+              {linhas.map((linha, index) => (
+                <tr key={linha.id}>
+                  <td style={s.tdCenter}>{index + 1}</td>
+                  <td style={s.td}>
+                    <input type="text" value={linha.descricao}
+                      onChange={(e) => atualizarLinha(linha.id, "descricao", e.target.value)}
+                      style={s.editInput} placeholder="Descrição..." />
+                  </td>
+                  <td style={s.tdCenter}>
+                    <input type="number" value={linha.quantidade} min={1}
+                      onChange={(e) => atualizarLinha(linha.id, "quantidade", e.target.value)}
+                      style={s.editInputCenter} />
+                  </td>
+                  <td style={s.tdRight}>
+                    <input type="number" value={linha.preco_unitario} min={0} step={0.01}
+                      onChange={(e) => atualizarLinha(linha.id, "preco_unitario", e.target.value)}
+                      style={s.editInputRight} />
+                  </td>
+                  <td style={s.tdRight}>{formatCurrency(linha.preco_unitario * linha.quantidade)}</td>
+                  <td style={s.tdCenter} className="print:hidden">
+                    <button onClick={() => removerLinha(linha.id)} style={{ color: "#c00", cursor: "pointer", fontWeight: "bold", fontSize: "14px", background: "none", border: "none" }} title="Remover">×</button>
                   </td>
                 </tr>
-              ) : (
-                linhas.map((linha, index) => (
-                  <tr key={linha.id}>
-                    <td className="border border-[#3b5998] px-2 py-1 text-center">{index + 1}</td>
-                    <td className="border border-[#3b5998] px-2 py-1">
-                      <input
-                        type="text"
-                        value={linha.descricao}
-                        onChange={(e) => atualizarLinha(linha.id, "descricao", e.target.value)}
-                        className="w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-[#3b5998] rounded px-1 print:ring-0"
-                        placeholder="Descrição do produto"
-                      />
-                    </td>
-                    <td className="border border-[#3b5998] px-2 py-1 text-center">
-                      <input
-                        type="number"
-                        value={linha.quantidade}
-                        onChange={(e) => atualizarLinha(linha.id, "quantidade", e.target.value)}
-                        className="w-full text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-[#3b5998] rounded px-1 print:ring-0"
-                        min="1"
-                      />
-                    </td>
-                    <td className="border border-[#3b5998] px-2 py-1 text-right">
-                      <input
-                        type="number"
-                        value={linha.preco_unitario}
-                        onChange={(e) => atualizarLinha(linha.id, "preco_unitario", e.target.value)}
-                        className="w-full text-right bg-transparent focus:outline-none focus:ring-1 focus:ring-[#3b5998] rounded px-1 print:ring-0"
-                        step="0.01"
-                        min="0"
-                      />
-                    </td>
-                    <td className="border border-[#3b5998] px-2 py-1 text-right">
-                      {formatCurrency(linha.preco_unitario * linha.quantidade)}
-                    </td>
-                    <td className="border border-[#3b5998] px-2 py-1 text-center print:hidden">
-                      <button
-                        onClick={() => removerLinha(linha.id)}
-                        className="text-red-500 hover:text-red-700"
-                        title="Remover linha"
-                      >
-                        ×
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
+
+              {/* Linhas vazias para preenchimento visual */}
+              {Array.from({ length: linhasVazias }).map((_, i) => (
+                <tr key={`vazia-${i}`}>
+                  <td style={s.tdCenter}>{linhas.length + i + 1}</td>
+                  <td style={s.td}>&nbsp;</td>
+                  <td style={s.tdCenter}></td>
+                  <td style={s.tdRight}></td>
+                  <td style={s.tdRight}>{i === linhasVazias - 1 ? "—" : ""}</td>
+                  <td className="print:hidden" style={s.tdCenter}></td>
+                </tr>
+              ))}
+
+              {/* Botão adicionar (screen only) */}
               <tr className="print:hidden">
-                <td colSpan={6} className="border border-[#3b5998] px-2 py-2 text-center">
-                  <button
-                    onClick={adicionarLinha}
-                    className="text-[#3b5998] hover:text-[#2d4373] text-sm font-semibold"
-                  >
-                    + Adicionar Item
+                <td colSpan={6} style={{ ...s.td, textAlign: "center", padding: "6px" }}>
+                  <button onClick={adicionarLinha}
+                    style={{ color: "#1a3a5c", fontWeight: "bold", cursor: "pointer", background: "none", border: "none", fontSize: "12px" }}>
+                    + Adicionar Linha
                   </button>
                 </td>
               </tr>
             </tbody>
           </table>
 
-          {/* ===== TOTALS with dotted lines ===== */}
-          <div className="text-[11px] mb-2 space-y-0.5">
-            <div className="flex items-baseline">
-              <span className="font-semibold text-[#1a3a5c]">Sub -Total</span>
-              <span className="flex-1 border-b border-dotted border-gray-400 mx-2"></span>
-              <span className="w-12 text-right">MZN</span>
-              <span className="w-24 text-right font-mono">{formatCurrency(subtotal)}</span>
+          {/* ════ 5. SUMMARY AREA ════ */}
+          <div style={s.summaryArea}>
+            {/* Left: tax reason */}
+            <div style={s.taxReason}>
+              <div style={{ fontSize: "10px", color: "#555", marginBottom: "4px" }}>Motivo da não aplicação do Imposto:</div>
+              <div style={{ borderBottom: "1px solid #ccc", marginBottom: "4px" }}>&nbsp;</div>
+              <div style={{ borderBottom: "1px solid #ccc" }}>&nbsp;</div>
             </div>
-            <div className="flex items-baseline">
-              <span className="font-semibold text-[#1a3a5c]">IVA 16%</span>
-              <span className="flex-1 border-b border-dotted border-gray-400 mx-2"></span>
-              <span className="w-12 text-right">MZN</span>
-              <span className="w-24 text-right font-mono">{formatCurrency(iva)}</span>
-            </div>
-            <div className="flex items-baseline">
-              <span className="font-bold text-[#1a3a5c]">Total</span>
-              <span className="flex-1 border-b border-dotted border-gray-400 mx-2"></span>
-              <span className="w-12 text-right">MZN</span>
-              <span className="w-24 text-right font-mono font-bold">{formatCurrency(total)}</span>
-            </div>
+
+            {/* Right: totals */}
+            <table style={s.totalsTable}>
+              <tbody>
+                <tr>
+                  <td style={{ ...s.totalsTableTd, width: "45%" }}>Sub-total</td>
+                  <td style={{ ...s.totalsTableTd, textAlign: "right" }}>{formatCurrency(subtotal)}</td>
+                </tr>
+                <tr>
+                  <td style={s.totalsTableTd}>IVA 16%</td>
+                  <td style={{ ...s.totalsTableTd, textAlign: "right" }}>{iva > 0 ? formatCurrency(iva) : "—"}</td>
+                </tr>
+                <tr>
+                  <td style={{ ...s.totalsTableTd, fontSize: "12px" }}>Total</td>
+                  <td style={{ ...s.totalsTableTd, textAlign: "right", fontSize: "12px" }}>{formatCurrency(total)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          {/* ===== AMOUNT IN WORDS ===== */}
-          <div className="text-[11px] mb-4">
-            <span className="font-semibold text-[#1a3a5c]">São: </span>
-            <span>{numeroParaExtenso(total)}.</span>
+          {/* Valor por extenso */}
+          <div style={{ fontSize: "11px", fontStyle: "italic", marginBottom: "15px" }}>
+            <strong>São: </strong>{numeroParaExtenso(total)}.
           </div>
 
-          {/* ===== FOOTER - BANK DETAILS + TERMS ===== */}
-          <div className="flex text-[9px] mb-4">
-            {/* Left: Bank Details */}
-            <div className="flex-1 border border-[#3b5998]">
-              <div className="bg-[#3b5998] text-white px-2 py-1 font-semibold text-center">Dados Bancários</div>
-              <div className="p-2 text-[#1a3a5c] space-y-0.5">
-                <p>MOZA BANCO: 3903555910001 ;NIB: 003400003903555910165</p>
-                <p>ABSA: 0007102004618; NIB: 000200070710200461876</p>
+          {/* ════ 6. FOOTER DETAILS ════ */}
+          <div style={s.footerDetails}>
+            {/* Bank boxes */}
+            <div style={s.bankBoxes}>
+              <div style={s.bankBox}>
+                <strong style={{ fontSize: "11px", display: "block", marginBottom: "3px" }}>Dados Bancários</strong>
+                MOZA BANCO<br />
+                Nº da Conta: 3903555910001<br />
+                NIB: 003400003903555910165<br />
+                Titular: <strong>Magic Pro Services</strong>
+              </div>
+              <div style={s.bankBox}>
+                <strong style={{ fontSize: "11px", display: "block", marginBottom: "3px" }}>Dados Bancários</strong>
+                ABSA<br />
+                Nº da Conta: 0007102004618<br />
+                NIB: 000200070710200461876<br />
+                Validade: <strong>{calcularValidadeDias()}</strong>
               </div>
             </div>
 
-            {/* Right: Terms */}
-            <div className="flex-1 border border-[#3b5998] border-l-0">
-              <div className="bg-[#3b5998] text-white px-2 py-1 font-semibold text-center">
-                Garantia Técnica - 1 (Um) Ano.
-              </div>
-              <div className="p-2 text-[#1a3a5c] space-y-0.5">
-                <p>
-                  <span className="font-semibold">Prazo de Entrega -</span> Imediata, após confirmação da Ordem
-                </p>
-                <p>
-                  <span className="font-semibold">Condições de Fornecimento:</span> Por Negociar.
-                </p>
+            {/* Signature */}
+            <div style={s.signatureBox}>
+              <div style={s.sigLine} />
+              <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px" }}>
+                <input
+                  type="text"
+                  value={diretorGeralNome}
+                  onChange={(e) => setDiretorGeralNome(e.target.value)}
+                  style={{ ...s.editInputCenter, width: `${Math.max(diretorGeralNome.length * 7, 100)}px` }}
+                />
+                <span>— Director Geral</span>
               </div>
             </div>
           </div>
 
-          {/* ===== TABELA DE NOTAS (Agora recebendo do CotacoesClient) ===== */}
-          <div className="border border-[#3b5998] mb-4">
-            <div className="bg-[#3b5998] text-white px-3 py-1 text-[11px] font-semibold text-center">NOTA</div>
-            <div className="p-2">
-              <table className="w-full border-collapse text-[10px]">
+          {/* ════ 7. NOTAS ════ */}
+          {linhasNotas.length > 0 && (
+            <div style={{ border: "1.5px solid #000", marginBottom: "15px" }}>
+              <div style={{ background: "#e6f0fa", fontWeight: "bold", padding: "4px 8px", borderBottom: "1px solid #000", fontSize: "11px", textAlign: "center" }}>
+                NOTA
+              </div>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10px" }}>
                 <tbody>
                   {linhasNotas.map((nota, index) => (
-                    <tr key={nota.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                      <td className="border border-[#3b5998] px-2 py-1 align-top w-8 text-center">
-                        {nota.id}
-                      </td>
-                      <td className="border border-[#3b5998] px-2 py-1 whitespace-pre-wrap">
-                        {nota.conteudo}
-                      </td>
+                    <tr key={nota.id} style={{ background: index % 2 === 0 ? "#f9f9f9" : "white" }}>
+                      <td style={{ ...s.td, width: "32px", textAlign: "center", verticalAlign: "top" }}>{nota.id}</td>
+                      <td style={{ ...s.td, whiteSpace: "pre-wrap" }}>{nota.conteudo}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          )}
 
-          {/* ===== SIGNATURE SECTION com campo editável para Diretor Geral ===== */}
-          <div className="flex justify-end items-end mt-8">
-            {/* Right: Signature line */}
-            <div className="text-center">
-              <div className="w-48 border-b border-[#1a3a5c] mb-1"></div>
-              <div className="flex items-center justify-center gap-2">
-                <input
-                  type="text"
-                  value={diretorGeralNome}
-                  onChange={handleDiretorGeralChange}
-                  className="text-[10px] text-[#1a3a5c] bg-transparent border-b border-gray-400 focus:outline-none focus:border-[#1a3a5c] text-center print:border-gray-400"
-                  style={{ width: `${Math.max(diretorGeralNome.length * 8, 100)}px` }}
-                />
-                <span className="text-[10px] text-[#1a3a5c]">- Director Geral</span>
-              </div>
+          {/* ════ 8. BOTTOM FOOTER ════ */}
+          <div>
+            <div style={{ fontSize: "9px", marginBottom: "2px" }}>NL</div>
+            <div style={s.systemInfo}>
+              <div>©Documento Processado pelo Computador</div>
+              <div>{new Date().toLocaleDateString("pt-MZ")} {new Date().toLocaleTimeString("pt-MZ", { hour: "2-digit", minute: "2-digit" })}</div>
+            </div>
+            <div style={{ fontSize: "8px", color: "#666" }}>
+              Serviços | Consultoria | Soluções Técnicas — Magic Pro Services, Lda.
             </div>
           </div>
-        </div>
+
+        </div>{/* end printable area */}
       </div>
 
-      {/* Print Styles */}
+      {/* Print styles */}
       <style jsx global>{`
         @media print {
-          body * {
-            visibility: hidden;
-          }
-          #cotacao-print, #cotacao-print * {
-            visibility: visible;
-          }
+          body * { visibility: hidden; }
+          #cotacao-print, #cotacao-print * { visibility: visible; }
           #cotacao-print {
             position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 10mm 15mm;
+            left: 0; top: 0;
+            width: 210mm;
+            padding: 12mm 15mm;
             background: white;
           }
-          .print\\:hidden {
-            display: none !important;
-          }
-          /* Preservar cores na impressão */
+          .print\\:hidden { display: none !important; }
           #cotacao-print * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-            color-adjust: exact !important;
           }
-          /* Preservar fundos coloridos */
-          .bg-white {
-            background-color: white !important;
-          }
-          .bg-[#3b5998] {
-            background-color: #3b5998 !important;
-          }
-          .bg-gray-50 {
-            background-color: #f9fafb !important;
-          }
-          /* Preservar cores de texto */
-          .text-[#1a3a5c] {
-            color: #1a3a5c !important;
-          }
-          .text-[#3b5998] {
-            color: #3b5998 !important;
-          }
-          .text-[#4a6fa5] {
-            color: #4a6fa5 !important;
-          }
-          .text-white {
-            color: white !important;
-          }
-          /* Preservar cores de bordas */
-          .border-[#3b5998] {
-            border-color: #3b5998 !important;
-          }
-          .border-[#1a3a5c] {
-            border-color: #1a3a5c !important;
-          }
-          @page {
-            size: A4;
-            margin: 8mm;
-          }
+          @page { size: A4; margin: 0; }
         }
       `}</style>
     </div>
