@@ -82,9 +82,10 @@ export default async function RelatoriosPage() {
       .limit(100),
 
     // FIX Bug #8: folhas de salário — todas (não só pagas) para que o componente possa filtrar
+    // Usa !folha_salarios_funcionario_id_fkey para especificar qual FK usar (existem 3 FKs para funcionarios)
     supabase
       .from("folha_salarios")
-      .select("*, funcionario:funcionarios(nome)")
+      .select("*, funcionario:funcionarios!folha_salarios_funcionario_id_fkey(nome)")
       .eq("empresa_id", empresaId)
       .order("ano", { ascending: false })
       .order("mes", { ascending: false }),

@@ -153,6 +153,11 @@ export function FacturasClient({
   const totalNC = facturasNC.reduce((a, f) => a + (Number(f.total) || 0), 0)
   const totalND = facturasND.reduce((a, f) => a + (Number(f.total) || 0), 0)
   const pendentes = facturasFT.filter((f) => f.estado === "Pendente").length
+  
+  // IVA calculations
+  const ivaFacturas = facturasFT.reduce((a, f) => a + (Number(f.iva) || 0), 0)
+  const ivaNC = facturasNC.reduce((a, f) => a + (Number(f.iva) || 0), 0)
+  const ivaLiquido = ivaFacturas - ivaNC
 
   const totaisCalc = calcularTotaisDocumento(
     itens.map((i) => ({
@@ -707,7 +712,7 @@ export function FacturasClient({
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">Total Facturado</CardTitle>
@@ -722,8 +727,32 @@ export function FacturasClient({
             <CardTitle className="text-xs font-medium text-muted-foreground">Notas de Credito</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-red-600">{formatarMZN(totalNC)} MZN</div>
+            <div className="text-xl font-bold text-red-600">-{formatarMZN(totalNC)} MZN</div>
             <p className="text-xs text-muted-foreground">{facturasNC.length} emitidas</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Facturado Líquido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-xl font-bold ${totalFT - totalNC >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {formatarMZN(totalFT - totalNC)} MZN
+            </div>
+            <p className="text-xs text-muted-foreground">FT - NC</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">IVA Líquido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-xl font-bold ${ivaLiquido >= 0 ? "text-amber-600" : "text-green-600"}`}>
+              {formatarMZN(ivaLiquido)} MZN
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {formatarMZN(ivaFacturas)} - {formatarMZN(ivaNC)}
+            </p>
           </CardContent>
         </Card>
         <Card>

@@ -71,7 +71,7 @@ supabase
   .limit(100),
   // Buscar folha de salarios para incluir na DRE
   empresaId
-    ? supabase.from("folha_salarios").select("id, mes, ano, estado, total_rendimentos").eq("empresa_id", empresaId)
+    ? supabase.from("folha_salarios").select("id, mes, ano, estado, total_bruto").eq("empresa_id", empresaId)
     : Promise.resolve({ data: [] }),
 ])
 
