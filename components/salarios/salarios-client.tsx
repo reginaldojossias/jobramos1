@@ -1060,12 +1060,12 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
 
       {/* Modal de Visualização */}
       <Dialog open={!!viewingId} onOpenChange={() => setViewingId(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Detalhes da Folha de Salário</DialogTitle>
           </DialogHeader>
           {viewingFolha && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-2">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Funcionário</p>
@@ -1171,7 +1171,7 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
 
       {/* FIX Bug #6: Modal de confirmação de pagamento com selecção de conta bancária */}
       <Dialog open={pagamentoModal.open} onOpenChange={(open) => !open && setPagamentoModal({ open: false, folhaId: null })}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Confirmar Pagamento</DialogTitle>
           </DialogHeader>

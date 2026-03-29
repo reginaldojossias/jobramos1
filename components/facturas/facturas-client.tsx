@@ -58,6 +58,7 @@ import {
   formatarDataExtenso,
 } from "@/lib/documento-utils"
 import { numeroPorExtenso } from "@/lib/numero-por-extenso"
+import { DocumentoUpload } from "@/components/shared/documento-upload"
 
 interface ItemForm {
   produto_id: string
@@ -691,6 +692,12 @@ export function FacturasClient({
                             <CreditCard className="h-4 w-4" />
                           </Button>
                         )}
+                        <DocumentoUpload
+                          tipoDocumento="factura"
+                          documentoId={f.id}
+                          documentoNumero={f.numero_documento || f.numero}
+                          compact
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

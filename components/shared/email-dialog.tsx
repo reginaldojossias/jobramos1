@@ -144,15 +144,15 @@ export function EmailDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
             Enviar {getDocumentLabel()} {documentNumber ? `Nº ${documentNumber}` : ""} por Email
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-2">
           {status === "success" && (
             <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
               <CheckCircle className="h-5 w-5" />

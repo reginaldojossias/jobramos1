@@ -377,14 +377,14 @@ export function ProdutosClient({ produtos: initialProdutos, fornecedores, empres
               Registar Entrada de Stock
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>Registar Entrada de Stock</DialogTitle>
               <DialogDescription>
                 Registe a entrada de produtos no stock, associando ao fornecedor e factura de compra.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
               {/* Produto */}
               <div className="grid gap-2">
                 <Label>Produto *</Label>
@@ -474,16 +474,16 @@ export function ProdutosClient({ produtos: initialProdutos, fornecedores, empres
                 />
               </div>
 
-              {/* Buttons */}
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={() => setIsStockOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleStockEntry} disabled={isLoading || !stockProdutoId || !stockQuantidade}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isLoading ? "A registar..." : "Registar Entrada"}
-                </Button>
-              </div>
+            </div>
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
+              <Button variant="outline" onClick={() => setIsStockOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleStockEntry} disabled={isLoading || !stockProdutoId || !stockQuantidade}>
+                <Save className="mr-2 h-4 w-4" />
+                {isLoading ? "A registar..." : "Registar Entrada"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -499,11 +499,11 @@ export function ProdutosClient({ produtos: initialProdutos, fornecedores, empres
               Novo Produto
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{editingId ? "Editar Produto" : "Novo Produto"}</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
               <div className="grid gap-2">
                 <Label htmlFor="nome">Nome do Produto *</Label>
                 <Input 
@@ -595,15 +595,15 @@ export function ProdutosClient({ produtos: initialProdutos, fornecedores, empres
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSubmit} disabled={isLoading || !nome}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isLoading ? "A guardar..." : "Guardar"}
-                </Button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSubmit} disabled={isLoading || !nome}>
+                <Save className="mr-2 h-4 w-4" />
+                {isLoading ? "A guardar..." : "Guardar"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -704,7 +704,7 @@ export function ProdutosClient({ produtos: initialProdutos, fornecedores, empres
 
       {/* History Dialog */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Histórico de Movimentos - {selectedProduto?.nome}</DialogTitle>
             <DialogDescription>

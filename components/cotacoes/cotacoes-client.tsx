@@ -808,12 +808,12 @@ export function CotacoesClient({ cotacoes: initialCotacoes, clientes, produtos, 
       </div>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Detalhes da Cotação {selectedCotacao?.numero}</DialogTitle>
           </DialogHeader>
           {selectedCotacao && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-2">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-semibold">Cliente:</span> {selectedCotacao.clientes?.nome || "-"}
