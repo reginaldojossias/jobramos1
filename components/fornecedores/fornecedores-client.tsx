@@ -313,11 +313,11 @@ export function FornecedoresClient({
               Novo Fornecedor
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{editingId ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
               <div className="grid gap-2">
                 <Label htmlFor="nome">Nome do Fornecedor *</Label>
                 <Input
@@ -410,15 +410,15 @@ export function FornecedoresClient({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSubmit} disabled={isLoading || !nome}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isLoading ? "A guardar..." : "Guardar"}
-                </Button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSubmit} disabled={isLoading || !nome}>
+                <Save className="mr-2 h-4 w-4" />
+                {isLoading ? "A guardar..." : "Guardar"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -491,7 +491,7 @@ export function FornecedoresClient({
 
       {/* Catalogo Dialog */}
       <Dialog open={isCatalogoOpen} onOpenChange={setIsCatalogoOpen}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Catálogo de Produtos - {selectedFornecedor?.nome}</DialogTitle>
             <DialogDescription>
@@ -563,8 +563,8 @@ export function FornecedoresClient({
         setIsAddProdutoOpen(open)
         if (!open) resetCatalogoForm()
       }}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[450px] max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Adicionar Produto ao Catálogo</DialogTitle>
             <DialogDescription>
               Associe um produto a este fornecedor com o preço de custo que ele cobra.

@@ -421,15 +421,15 @@ export function RecibosClient({
 
       {/* Dialog Novo Recibo */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Novo Recibo</DialogTitle>
             <DialogDescription>
               Emita um recibo vinculado a uma factura ou manualmente.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             {/* Factura vinculada (opcional) */}
             <div className="space-y-2">
               <Label>Factura (opcional)</Label>
@@ -574,7 +574,7 @@ export function RecibosClient({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={isLoading}>
               {isLoading ? "A emitir..." : "Emitir Recibo"}

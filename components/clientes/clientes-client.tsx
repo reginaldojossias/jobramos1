@@ -158,11 +158,11 @@ export function ClientesClient({ clientes: initialClientes }: ClientesClientProp
               Novo Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{editingId ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
               {/* Row 1: Nome e NUIT */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -295,16 +295,16 @@ export function ClientesClient({ clientes: initialClientes }: ClientesClientProp
                 />
               </div>
 
-              {/* Buttons */}
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSubmit} disabled={isLoading || !nome}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isLoading ? "A guardar..." : "Guardar"}
-                </Button>
-              </div>
+            </div>
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSubmit} disabled={isLoading || !nome}>
+                <Save className="mr-2 h-4 w-4" />
+                {isLoading ? "A guardar..." : "Guardar"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

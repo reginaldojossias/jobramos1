@@ -222,8 +222,8 @@ export function DocumentoUpload({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             Documentos Digitalizados - {tipoLabel} {documentoNumero}
           </DialogTitle>
@@ -232,6 +232,7 @@ export function DocumentoUpload({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {/* Upload Form */}
         <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
           <h4 className="font-medium text-sm">Carregar Novo Documento</h4>
@@ -358,6 +359,7 @@ export function DocumentoUpload({
             <p>Nenhum documento carregado</p>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   )
