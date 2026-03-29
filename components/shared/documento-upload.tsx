@@ -27,9 +27,11 @@ import {
 import { Upload, FileText, Download, Trash2, Loader2, File, ImageIcon } from "lucide-react"
 
 interface DocumentoUploadProps {
-  tipoDocumento: "factura" | "cotacao" | "carta"
+  tipoDocumento: "factura" | "cotacao" | "carta" | "recibo"
   documentoId: string
   documentoNumero?: string
+  /** Variante compacta mostra apenas um ícone pequeno */
+  compact?: boolean
 }
 
 interface Documento {
@@ -71,6 +73,7 @@ export function DocumentoUpload({
   tipoDocumento,
   documentoId,
   documentoNumero,
+  compact = false,
 }: DocumentoUploadProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -192,15 +195,32 @@ export function DocumentoUpload({
     factura: "Factura",
     cotacao: "Cotacao",
     carta: "Carta",
+    recibo: "Recibo",
   }[tipoDocumento]
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-          <File className="h-4 w-4" />
-          Documentos ({documentos?.length || 0})
-        </Button>
+        {compact ? (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0 relative"
+            title={`Documentos (${documentos?.length || 0})`}
+          >
+            <File className="h-4 w-4" />
+            {(documentos?.length || 0) > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                {documentos?.length}
+              </span>
+            )}
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+            <File className="h-4 w-4" />
+            Documentos ({documentos?.length || 0})
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>

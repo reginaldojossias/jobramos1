@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner"
 import { logEmitir } from "@/lib/audit-log"
 import { Plus, Printer, Search, Receipt, Eye, Building2 } from "lucide-react"
+import { DocumentoUpload } from "@/components/shared/documento-upload"
 import {
   FORMAS_PAGAMENTO,
   formatarMZN,
@@ -391,9 +392,17 @@ export function RecibosClient({
                     {formatarMZN(Number(r.valor))} MZN
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => handleViewPrint(r)} title="Ver / Imprimir">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => handleViewPrint(r)} title="Ver / Imprimir">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <DocumentoUpload
+                        tipoDocumento="recibo"
+                        documentoId={r.id}
+                        documentoNumero={r.numero_recibo}
+                        compact
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
