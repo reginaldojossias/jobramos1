@@ -221,7 +221,7 @@ function createS3Client() {
  * Gera uma chave única para o arquivo no B2
  */
 export function generateFileKey(
-  tipoDocumento: "factura" | "cotacao" | "carta",
+  tipoDocumento: "factura" | "cotacao" | "carta" | "recibo",
   documentoId: string,
   fileName: string
 ): string {

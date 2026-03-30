@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar tipo de documento
-    if (!["factura", "cotacao", "carta"].includes(tipoDocumento)) {
+    if (!["factura", "cotacao", "carta", "recibo"].includes(tipoDocumento)) {
       return NextResponse.json(
         { error: "Tipo de documento inválido" },
         { status: 400 }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Gerar chave única para o arquivo
     const fileKey = generateFileKey(
-      tipoDocumento as "factura" | "cotacao" | "carta",
+      tipoDocumento as "factura" | "cotacao" | "carta" | "recibo",
       documentoId,
       file.name
     )
