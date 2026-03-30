@@ -8,8 +8,7 @@
  * Baseado no PGC-NIRF (Plano Geral de Contabilidade - Moçambique)
  */
 
-import { createClient as createClientServer } from "@/lib/supabase/server"
-import { createClient as createClientBrowser } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/client"
 
 // ============================================================================
 // CÓDIGOS DAS CONTAS DO PLANO DE CONTAS (PGC-NIRF)
@@ -108,8 +107,7 @@ function arredondar(valor: number): number {
  * Cria um lançamento contabilístico no sistema
  */
 export async function criarLancamento(
-  dados: DadosLancamento,
-  isServer: boolean = false
+  dados: DadosLancamento
 ): Promise<ResultadoLancamento> {
   try {
     // Validar equilíbrio
@@ -123,7 +121,7 @@ export async function criarLancamento(
     }
 
     // Criar cliente Supabase
-    const supabase = isServer ? await createClientServer() : createClientBrowser()
+    const supabase = createClient()
 
     // Calcular totais
     const totalDebito = dados.linhas.reduce((sum, l) => sum + l.debito, 0)
@@ -185,11 +183,10 @@ export async function criarLancamento(
 export async function anularLancamento(
   lancamentoId: string,
   empresaId: string,
-  motivo: string,
-  isServer: boolean = false
+  motivo: string
 ): Promise<ResultadoLancamento> {
   try {
-    const supabase = isServer ? await createClientServer() : createClientBrowser()
+    const supabase = createClient()
 
     // Buscar lançamento original com linhas
     const { data: lancamentoOriginal, error: errorBusca } = await supabase
@@ -222,7 +219,7 @@ export async function anularLancamento(
       origem_id: lancamentoOriginal.origem_id,
       origem_numero: lancamentoOriginal.origem_numero,
       linhas: linhasEstorno,
-    }, isServer)
+    })
 
     if (!resultadoEstorno.success) {
       return resultadoEstorno
@@ -261,11 +258,10 @@ export async function lancarFactura(params: {
   iva: number
   total: number
   tipo_venda?: "mercadorias" | "servicos"
-  isServer?: boolean
 }): Promise<ResultadoLancamento> {
   const { 
     empresa_id, factura_id, numero, data, cliente_nome, 
-    subtotal, iva, total, tipo_venda = "mercadorias", isServer = false 
+    subtotal, iva, total, tipo_venda = "mercadorias"
   } = params
 
   const contaVendas = tipo_venda === "servicos" ? CONTAS.PRESTACAO_SERVICOS : CONTAS.VENDAS_MERCADORIAS
@@ -303,7 +299,7 @@ export async function lancarFactura(params: {
     origem_id: factura_id,
     origem_numero: numero,
     linhas,
-  }, isServer)
+  })
 }
 
 /**
@@ -323,11 +319,10 @@ export async function lancarNotaCredito(params: {
   iva: number
   total: number
   factura_ref?: string
-  isServer?: boolean
 }): Promise<ResultadoLancamento> {
   const { 
     empresa_id, nc_id, numero, data, cliente_nome,
-    subtotal, iva, total, factura_ref, isServer = false 
+    subtotal, iva, total, factura_ref
   } = params
 
   const descRef = factura_ref ? ` (ref. FT ${factura_ref})` : ""
@@ -364,7 +359,7 @@ export async function lancarNotaCredito(params: {
     origem_id: nc_id,
     origem_numero: numero,
     linhas,
-  }, isServer)
+  })
 }
 
 /**
@@ -382,11 +377,10 @@ export async function lancarRecibo(params: {
   valor: number
   meio_pagamento: "dinheiro" | "transferencia" | "cheque" | "outro"
   factura_ref?: string
-  isServer?: boolean
 }): Promise<ResultadoLancamento> {
   const { 
     empresa_id, recibo_id, numero, data, cliente_nome, 
-    valor, meio_pagamento, factura_ref, isServer = false 
+    valor, meio_pagamento, factura_ref
   } = params
 
   // Determinar conta de destino baseado no meio de pagamento
@@ -416,7 +410,7 @@ export async function lancarRecibo(params: {
     origem_id: recibo_id,
     origem_numero: numero,
     linhas,
-  }, isServer)
+  })
 }
 
 /**
@@ -438,12 +432,10 @@ export async function lancarDespesa(params: {
   total: number
   conta_custo?: string
   forma_pagamento: "pendente" | "dinheiro" | "transferencia" | "cheque"
-  isServer?: boolean
 }): Promise<ResultadoLancamento> {
   const { 
     empresa_id, despesa_id, numero, data, descricao, fornecedor_nome,
-    subtotal, iva, total, conta_custo = CONTAS.FST, 
-    forma_pagamento, isServer = false 
+    subtotal, iva, total, conta_custo = CONTAS.FST, forma_pagamento
   } = params
 
   const linhas: LinhaLancamento[] = [
@@ -490,7 +482,7 @@ export async function lancarDespesa(params: {
     origem_id: despesa_id,
     origem_numero: numero,
     linhas,
-  }, isServer)
+  })
 }
 
 /**
@@ -514,12 +506,11 @@ export async function lancarFolhaSalario(params: {
   inss_empresa: number
   salario_liquido: number
   forma_pagamento: "dinheiro" | "transferencia"
-  isServer?: boolean
 }): Promise<ResultadoLancamento> {
   const { 
     empresa_id, folha_id, funcionario_nome, mes, ano,
     salario_bruto, inss_trabalhador, irps, inss_empresa, 
-    salario_liquido, forma_pagamento, isServer = false 
+    salario_liquido, forma_pagamento
   } = params
 
   const periodo = `${String(mes).padStart(2, "0")}/${ano}`
@@ -571,7 +562,7 @@ export async function lancarFolhaSalario(params: {
     origem_id: folha_id,
     origem_numero: `SAL-${periodo}-${funcionario_nome.substring(0, 10)}`,
     linhas,
-  }, isServer)
+  })
 }
 
 /**
@@ -588,12 +579,10 @@ export async function lancarMovimentoBancario(params: {
   tipo: "entrada" | "saida"
   conta_origem?: string
   conta_destino?: string
-  isServer?: boolean
 }): Promise<ResultadoLancamento> {
   const { 
     empresa_id, movimento_id, data, descricao, valor, 
-    tipo, conta_origem = CONTAS.BANCO, conta_destino = CONTAS.CAIXA,
-    isServer = false 
+    tipo, conta_origem = CONTAS.BANCO, conta_destino = CONTAS.CAIXA
   } = params
 
   const linhas: LinhaLancamento[] = tipo === "entrada" 
@@ -613,7 +602,7 @@ export async function lancarMovimentoBancario(params: {
     tipo_origem: "movimento_bancario",
     origem_id: movimento_id,
     linhas,
-  }, isServer)
+  })
 }
 
 // ============================================================================
@@ -624,10 +613,9 @@ export async function lancarMovimentoBancario(params: {
  * Busca lançamentos por origem (documento)
  */
 export async function buscarLancamentosPorOrigem(
-  origem_id: string,
-  isServer: boolean = false
+  origem_id: string
 ) {
-  const supabase = isServer ? await createClientServer() : createClientBrowser()
+  const supabase = createClient()
   
   const { data, error } = await supabase
     .from("lancamentos")
@@ -647,9 +635,8 @@ export async function buscarLancamentosPorOrigem(
  * Verifica se já existe lançamento para um documento
  */
 export async function existeLancamento(
-  origem_id: string,
-  isServer: boolean = false
+  origem_id: string
 ): Promise<boolean> {
-  const lancamentos = await buscarLancamentosPorOrigem(origem_id, isServer)
+  const lancamentos = await buscarLancamentosPorOrigem(origem_id)
   return lancamentos.some(l => l.estado !== "anulado")
 }
