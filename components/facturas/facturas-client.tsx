@@ -59,6 +59,7 @@ import {
 } from "@/lib/documento-utils"
 import { numeroPorExtenso } from "@/lib/numero-por-extenso"
 import { DocumentoUpload } from "@/components/shared/documento-upload"
+import { lancarFactura, lancarNotaCredito } from "@/lib/motor-lancamentos"
 
 interface ItemForm {
   produto_id: string
@@ -555,6 +556,39 @@ export function FacturasClient({
     cliente: clienteNome,
     total: totais.total
   })
+  
+  // Gerar lançamento contabilístico (partidas dobradas)
+  try {
+    if (tipoDocumento === "FT") {
+      await lancarFactura({
+        empresa_id: empresaId,
+        factura_id: newFactura.id,
+        numero: numeroDoc,
+        data: new Date().toISOString().split("T")[0],
+        cliente_nome: clienteNome,
+        subtotal: totais.subtotal,
+        iva: totais.iva,
+        total: totais.total,
+        tipo_venda: "mercadorias",
+      })
+    } else if (tipoDocumento === "NC") {
+      const facturaOrigem = facturas.find((f) => f.id === facturaOrigemId)
+      await lancarNotaCredito({
+        empresa_id: empresaId,
+        nc_id: newFactura.id,
+        numero: numeroDoc,
+        data: new Date().toISOString().split("T")[0],
+        cliente_nome: clienteNome,
+        subtotal: totais.subtotal,
+        iva: totais.iva,
+        total: totais.total,
+        factura_ref: facturaOrigem?.numero_documento || facturaOrigem?.numero,
+      })
+    }
+  } catch (lancamentoError) {
+    console.error("[v0] Erro ao gerar lançamento contabilístico:", lancamentoError)
+    // Não bloqueia a criação do documento, apenas regista o erro
+  }
   
   toast.success(`${TIPO_DOCUMENTO_LABELS[tipoDocumento]} ${numeroDoc} criada com sucesso`)
     } catch (error: any) {

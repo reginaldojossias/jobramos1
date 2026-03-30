@@ -42,6 +42,7 @@ import {
   formatarDataExtenso,
 } from "@/lib/documento-utils"
 import { numeroPorExtenso } from "@/lib/numero-por-extenso"
+import { lancarRecibo } from "@/lib/motor-lancamentos"
 
 interface FacturaPendente {
   id: string
@@ -256,6 +257,28 @@ export function RecibosClient({
     cliente: clienteNome,
     valor: Number(valor)
   })
+  
+  // Gerar lançamento contabilístico (partidas dobradas)
+  try {
+    const meioPagamento = formaPagamento === "Dinheiro" ? "dinheiro" 
+      : formaPagamento === "Transferência" ? "transferencia" 
+      : formaPagamento === "Cheque" ? "cheque" 
+      : "outro"
+    
+    await lancarRecibo({
+      empresa_id: empresaId,
+      recibo_id: newRecibo.id,
+      numero: numeroRecibo,
+      data: new Date().toISOString().split("T")[0],
+      cliente_nome: clienteNome,
+      valor: Number(valor),
+      meio_pagamento: meioPagamento,
+      factura_ref: selectedFactura?.numero_documento || selectedFactura?.numero || undefined,
+    })
+  } catch (lancamentoError) {
+    console.error("[v0] Erro ao gerar lançamento contabilístico:", lancamentoError)
+    // Não bloqueia a emissão do recibo, apenas regista o erro
+  }
   
   toast.success(`Recibo ${numeroRecibo} emitido com sucesso`)
     } catch (error: any) {
