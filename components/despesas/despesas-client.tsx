@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select"
 import { Plus, Search, Pencil, Trash2, Wallet, TrendingUp, Clock, Filter, Calculator, Building2 } from "lucide-react"
 import { formatarMZN, formatarData, ESTADO_CORES, FORMAS_PAGAMENTO } from "@/lib/documento-utils"
+import { lancarDespesa } from "@/lib/motor-lancamentos"
 
 const CATEGORIAS = [
   { valor: "Aluguer", label: "Aluguer / Renda" },
@@ -199,6 +200,35 @@ export function DespesasClient({
   if (error) throw error
   setDespesas((prev) => [newDespesa, ...prev])
   await logCriar("despesas", newDespesa.id, `Despesa registada - ${descricao} - ${formatarMZN(Number(valor))} MZN`, { descricao, valor: Number(valor), categoria })
+  
+  // Gerar lançamento contabilístico (partidas dobradas)
+  try {
+    const fornecedorNome = fornecedorId 
+      ? fornecedores.find((f: any) => f.id === fornecedorId)?.nome 
+      : undefined
+    
+    const formaPagamentoLanc = estado === "Pendente" ? "pendente"
+      : formaPagamento === "Dinheiro" ? "dinheiro"
+      : formaPagamento === "Cheque" ? "cheque"
+      : "transferencia"
+    
+    await lancarDespesa({
+      empresa_id: empresaId,
+      despesa_id: newDespesa.id,
+      numero: numeroDocumento || undefined,
+      data: dataDespesa,
+      descricao: descricao,
+      fornecedor_nome: fornecedorNome,
+      subtotal: Number(valor) - Number(valorIva),
+      iva: Number(valorIva),
+      total: Number(valor),
+      forma_pagamento: formaPagamentoLanc,
+    })
+  } catch (lancamentoError) {
+    console.error("[v0] Erro ao gerar lançamento contabilístico:", lancamentoError)
+    // Não bloqueia o registo da despesa, apenas regista o erro
+  }
+  
   toast.success("Despesa registada com sucesso")
   }
 

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { lancarFolhaSalario } from "@/lib/motor-lancamentos"
 
 interface Funcionario {
   id: string
@@ -486,15 +487,38 @@ export function SalariosClient({ folhaSalarios: initialFolhaSalarios, funcionari
               })
             if (movError) throw movError
 
-            await supabase
+      await supabase
               .from("contas_bancarias")
               .update({ saldo_atual: novoSaldo, updated_at: new Date().toISOString() })
               .eq("id", contaId)
+            }
+          }
+          
+          // Gerar lançamento contabilístico (partidas dobradas) ao pagar
+          const folha = folhaSalarios.find((f) => f.id === folhaId)
+          if (folha) {
+            try {
+              await lancarFolhaSalario({
+                empresa_id: empresaId,
+                folha_id: folhaId,
+                funcionario_nome: folha.funcionario?.nome || "Funcionário",
+                mes: folha.mes,
+                ano: folha.ano,
+                salario_bruto: folha.total_bruto,
+                inss_trabalhador: folha.inss_trabalhador,
+                irps: folha.irps,
+                inss_empresa: folha.inss_empresa,
+                salario_liquido: folha.salario_liquido,
+                forma_pagamento: contaId ? "transferencia" : "dinheiro",
+              })
+            } catch (lancamentoError) {
+              console.error("[v0] Erro ao gerar lançamento contabilístico:", lancamentoError)
+              // Não bloqueia o pagamento, apenas regista o erro
+            }
           }
         }
-      }
 
-      const { error } = await supabase.from("folha_salarios").update(updates).eq("id", folhaId)
+        const { error } = await supabase.from("folha_salarios").update(updates).eq("id", folhaId)
 
       if (error) throw error
 
