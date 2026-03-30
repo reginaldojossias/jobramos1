@@ -54,7 +54,7 @@ const adminMenuItems: MenuItem[] = [
   { href: "/dashboard/funcionarios", label: "Funcionarios", icon: UserCog, permissionKey: "funcionarios" },
   { href: "/dashboard/salarios", label: "Salarios", icon: Banknote, permissionKey: "salarios" },
   { href: "/dashboard/conciliacao", label: "Conciliacao", icon: Calculator, permissionKey: "conciliacao" },
-  { href: "/contabilidade/diario", label: "Diario Contabil", icon: BookOpen, permissionKey: "conciliacao" },
+  { href: "/dashboard/contabilidade/diario", label: "Diario Contabil", icon: BookOpen, permissionKey: "conciliacao" },
   { href: "/dashboard/relatorios", label: "Relatorios", icon: BarChart3, permissionKey: "relatorios" },
   { href: "/dashboard/logs", label: "Logs Actividade", icon: Activity, permissionKey: "logs" },
   { href: "/dashboard/configuracoes", label: "Configuracoes", icon: Settings, permissionKey: "configuracoes" },
