@@ -27,7 +27,7 @@ export default async function DiarioPage() {
     empresaId = emp?.id
   }
 
-  // Buscar lançamentos com linhas
+  // Buscar lançamentos com linhas (usando relação com plano_contas via conta_id)
   const { data: lancamentos } = empresaId
     ? await supabase
         .from("lancamentos")
@@ -35,11 +35,14 @@ export default async function DiarioPage() {
           *,
           lancamento_linhas (
             id,
-            conta_codigo,
+            conta_id,
             descricao,
             debito,
             credito,
-            ordem
+            plano_contas (
+              codigo,
+              nome
+            )
           )
         `)
         .eq("empresa_id", empresaId)
@@ -47,6 +50,16 @@ export default async function DiarioPage() {
         .order("created_at", { ascending: false })
         .limit(100)
     : { data: [] }
+
+  // Transformar dados para o formato esperado pelo componente
+  const lancamentosFormatados = (lancamentos || []).map((l: any) => ({
+    ...l,
+    lancamento_linhas: (l.lancamento_linhas || []).map((linha: any) => ({
+      ...linha,
+      conta_codigo: linha.plano_contas?.codigo || "",
+      conta_nome: linha.plano_contas?.nome || "",
+    }))
+  }))
 
   // Buscar plano de contas para lookup
   const { data: planoContas } = await supabase
@@ -60,7 +73,7 @@ export default async function DiarioPage() {
 
   return (
     <DiarioClient 
-      lancamentos={lancamentos || []} 
+      lancamentos={lancamentosFormatados} 
       contasMap={contasMap}
       empresaId={empresaId || ""}
     />
