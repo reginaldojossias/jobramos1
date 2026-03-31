@@ -127,16 +127,38 @@ export async function criarLancamento(
     const totalDebito = dados.linhas.reduce((sum, l) => sum + l.debito, 0)
     const totalCredito = dados.linhas.reduce((sum, l) => sum + l.credito, 0)
 
-    // Inserir lançamento principal
+    // Buscar IDs das contas pelo código
+    const codigosContas = [...new Set(dados.linhas.map(l => l.conta_codigo))]
+    const { data: contasDb, error: errorContas } = await supabase
+      .from("plano_contas")
+      .select("id, codigo")
+      .in("codigo", codigosContas)
+    
+    if (errorContas || !contasDb) {
+      console.error("[v0] Erro ao buscar contas:", errorContas)
+      return { success: false, error: "Erro ao buscar contas do plano de contas" }
+    }
+    
+    const contasMap = Object.fromEntries(contasDb.map(c => [c.codigo, c.id]))
+    
+    // Verificar se todas as contas existem
+    for (const codigo of codigosContas) {
+      if (!contasMap[codigo]) {
+        console.error("[v0] Conta não encontrada:", codigo)
+        return { success: false, error: `Conta ${codigo} não encontrada no plano de contas` }
+      }
+    }
+
+    // Inserir lançamento principal (usando nomes de colunas do schema)
     const { data: lancamento, error: errorLancamento } = await supabase
       .from("lancamentos")
       .insert({
         empresa_id: dados.empresa_id,
         data: dados.data,
         descricao: dados.descricao,
-        tipo_origem: dados.tipo_origem,
-        origem_id: dados.origem_id,
-        origem_numero: dados.origem_numero || null,
+        documento_tipo: dados.tipo_origem,
+        documento_id: dados.origem_id,
+        numero_lancamento: dados.origem_numero || null,
         total_debito: arredondar(totalDebito),
         total_credito: arredondar(totalCredito),
         estado: "rascunho",
@@ -149,14 +171,13 @@ export async function criarLancamento(
       return { success: false, error: errorLancamento.message }
     }
 
-    // Inserir linhas do lançamento
-    const linhasParaInserir = dados.linhas.map((linha, index) => ({
+    // Inserir linhas do lançamento (usando conta_id em vez de conta_codigo)
+    const linhasParaInserir = dados.linhas.map((linha) => ({
       lancamento_id: lancamento.id,
-      conta_codigo: linha.conta_codigo,
+      conta_id: contasMap[linha.conta_codigo],
       descricao: linha.descricao,
       debito: arredondar(linha.debito),
       credito: arredondar(linha.credito),
-      ordem: index + 1,
     }))
 
     const { error: errorLinhas } = await supabase
@@ -188,10 +209,10 @@ export async function anularLancamento(
   try {
     const supabase = createClient()
 
-    // Buscar lançamento original com linhas
+    // Buscar lançamento original com linhas e contas
     const { data: lancamentoOriginal, error: errorBusca } = await supabase
       .from("lancamentos")
-      .select("*, lancamento_linhas(*)")
+      .select("*, lancamento_linhas(*, plano_contas(codigo))")
       .eq("id", lancamentoId)
       .single()
 
@@ -205,7 +226,7 @@ export async function anularLancamento(
 
     // Criar lançamento de estorno (inverte débitos e créditos)
     const linhasEstorno: LinhaLancamento[] = lancamentoOriginal.lancamento_linhas.map((l: any) => ({
-      conta_codigo: l.conta_codigo,
+      conta_codigo: l.plano_contas?.codigo || "",
       descricao: `Estorno: ${l.descricao}`,
       debito: l.credito, // Inverte
       credito: l.debito, // Inverte
@@ -215,9 +236,9 @@ export async function anularLancamento(
       empresa_id: empresaId,
       data: new Date().toISOString().split("T")[0],
       descricao: `Estorno: ${lancamentoOriginal.descricao} - ${motivo}`,
-      tipo_origem: lancamentoOriginal.tipo_origem,
-      origem_id: lancamentoOriginal.origem_id,
-      origem_numero: lancamentoOriginal.origem_numero,
+      tipo_origem: lancamentoOriginal.documento_tipo,
+      origem_id: lancamentoOriginal.documento_id,
+      origem_numero: lancamentoOriginal.numero_lancamento,
       linhas: linhasEstorno,
     })
 
