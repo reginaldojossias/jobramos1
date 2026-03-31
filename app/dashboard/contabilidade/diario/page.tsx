@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { DiarioClient } from "@/components/contabilidade/diario-client"
 
 export const metadata = {
@@ -10,36 +9,44 @@ export const metadata = {
 export default async function DiarioPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) redirect("/login")
 
-  // Buscar empresa do utilizador
-  const { data: perfil } = await supabase
-    .from("perfis")
-    .select("empresa_id")
-    .eq("user_id", user.id)
-    .single()
+  // Buscar empresa do utilizador (mesma lógica das outras páginas)
+  const { data: funcionario } = await supabase
+    .from("funcionarios")
+    .select("id, nome, empresa_id")
+    .eq("user_id", user?.id)
+    .maybeSingle()
 
-  if (!perfil?.empresa_id) redirect("/login")
+  let empresaId = funcionario?.empresa_id
+  if (!empresaId) {
+    const { data: emp } = await supabase
+      .from("empresas")
+      .select("id")
+      .eq("user_id", user?.id)
+      .maybeSingle()
+    empresaId = emp?.id
+  }
 
   // Buscar lançamentos com linhas
-  const { data: lancamentos } = await supabase
-    .from("lancamentos")
-    .select(`
-      *,
-      lancamento_linhas (
-        id,
-        conta_codigo,
-        descricao,
-        debito,
-        credito,
-        ordem
-      )
-    `)
-    .eq("empresa_id", perfil.empresa_id)
-    .order("data", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(100)
+  const { data: lancamentos } = empresaId
+    ? await supabase
+        .from("lancamentos")
+        .select(`
+          *,
+          lancamento_linhas (
+            id,
+            conta_codigo,
+            descricao,
+            debito,
+            credito,
+            ordem
+          )
+        `)
+        .eq("empresa_id", empresaId)
+        .order("data", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(100)
+    : { data: [] }
 
   // Buscar plano de contas para lookup
   const { data: planoContas } = await supabase
@@ -55,7 +62,7 @@ export default async function DiarioPage() {
     <DiarioClient 
       lancamentos={lancamentos || []} 
       contasMap={contasMap}
-      empresaId={perfil.empresa_id}
+      empresaId={empresaId || ""}
     />
   )
 }
