@@ -149,6 +149,11 @@ export async function criarLancamento(
       }
     }
 
+    // Gerar número de lançamento único
+    const dataFormatada = dados.data.replace(/-/g, "")
+    const timestamp = Date.now().toString().slice(-6)
+    const numeroLancamento = dados.origem_numero || `LANC-${dataFormatada}-${timestamp}`
+
     // Inserir lançamento principal (usando nomes de colunas do schema)
     const { data: lancamento, error: errorLancamento } = await supabase
       .from("lancamentos")
@@ -158,7 +163,7 @@ export async function criarLancamento(
         descricao: dados.descricao,
         documento_tipo: dados.tipo_origem,
         documento_id: dados.origem_id,
-        numero_lancamento: dados.origem_numero || null,
+        numero_lancamento: numeroLancamento,
         total_debito: arredondar(totalDebito),
         total_credito: arredondar(totalCredito),
         estado: "rascunho",
