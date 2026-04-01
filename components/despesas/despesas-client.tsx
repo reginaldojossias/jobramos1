@@ -187,50 +187,50 @@ export function DespesasClient({
           .eq("id", editingId)
           .select(`*, fornecedores:fornecedor_id(nome), conta_bancaria:conta_bancaria_id(id, nome, banco)`)
           .single()
-  if (error) throw error
-  setDespesas((prev) => prev.map((d) => (d.id === editingId ? updated : d)))
-  await logEditar("despesas", editingId, `Despesa actualizada - ${descricao} - ${formatarMZN(Number(valor))} MZN`)
-  toast.success("Despesa actualizada com sucesso")
-  } else {
+        if (error) throw error
+        setDespesas((prev) => prev.map((d) => (d.id === editingId ? updated : d)))
+        await logEditar("despesas", editingId, `Despesa actualizada - ${descricao} - ${formatarMZN(Number(valor))} MZN`)
+        toast.success("Despesa actualizada com sucesso")
+      } else {
         const { data: newDespesa, error } = await supabase
           .from("despesas")
           .insert(despesaData)
           .select(`*, fornecedores:fornecedor_id(nome), conta_bancaria:conta_bancaria_id(id, nome, banco)`)
           .single()
-  if (error) throw error
-  setDespesas((prev) => [newDespesa, ...prev])
-  await logCriar("despesas", newDespesa.id, `Despesa registada - ${descricao} - ${formatarMZN(Number(valor))} MZN`, { descricao, valor: Number(valor), categoria })
-  
-  // Gerar lançamento contabilístico (partidas dobradas)
-  try {
-    const fornecedorNome = fornecedorId 
-      ? fornecedores.find((f: any) => f.id === fornecedorId)?.nome 
-      : undefined
-    
-    const formaPagamentoLanc = estado === "Pendente" ? "pendente"
-      : formaPagamento === "Dinheiro" ? "dinheiro"
-      : formaPagamento === "Cheque" ? "cheque"
-      : "transferencia"
-    
-    await lancarDespesa({
-      empresa_id: empresaId,
-      despesa_id: newDespesa.id,
-      numero: numeroDocumento || undefined,
-      data: dataDespesa,
-      descricao: descricao,
-      fornecedor_nome: fornecedorNome,
-      subtotal: Number(valor) - Number(valorIva),
-      iva: Number(valorIva),
-      total: Number(valor),
-      forma_pagamento: formaPagamentoLanc,
-    })
-  } catch (lancamentoError) {
-    console.error("[v0] Erro ao gerar lançamento contabilístico:", lancamentoError)
-    // Não bloqueia o registo da despesa, apenas regista o erro
-  }
-  
-  toast.success("Despesa registada com sucesso")
-  }
+        if (error) throw error
+        setDespesas((prev) => [newDespesa, ...prev])
+        await logCriar("despesas", newDespesa.id, `Despesa registada - ${descricao} - ${formatarMZN(Number(valor))} MZN`, { descricao, valor: Number(valor), categoria })
+
+        // Gerar lançamento contabilístico (partidas dobradas)
+        try {
+          const fornecedorNome = fornecedorId
+            ? fornecedores.find((f: any) => f.id === fornecedorId)?.nome
+            : undefined
+
+          const formaPagamentoLanc = estado === "Pendente" ? "pendente"
+            : formaPagamento === "Dinheiro" ? "dinheiro"
+              : formaPagamento === "Cheque" ? "cheque"
+                : "transferencia"
+
+          await lancarDespesa({
+            empresa_id: empresaId,
+            despesa_id: newDespesa.id,
+            numero: numeroDocumento || undefined,
+            data,
+            descricao: descricao,
+            fornecedor_nome: fornecedorNome,
+            subtotal: Number(valor) - Number(ivaSuportado),
+            iva: Number(ivaSuportado),
+            total: Number(valor),
+            forma_pagamento: formaPagamentoLanc,
+          })
+        } catch (lancamentoError) {
+          console.error("[v0] Erro ao gerar lançamento contabilístico:", lancamentoError)
+          // Não bloqueia o registo da despesa, apenas regista o erro
+        }
+
+        toast.success("Despesa registada com sucesso")
+      }
 
       setShowDialog(false)
       resetForm()
@@ -245,12 +245,12 @@ export function DespesasClient({
     if (!confirm("Tem certeza que deseja eliminar esta despesa?")) return
 
     try {
-  const despesaToDelete = despesas.find(d => d.id === id)
-  const { error } = await supabase.from("despesas").delete().eq("id", id)
-  if (error) throw error
-  setDespesas((prev) => prev.filter((d) => d.id !== id))
-  await logEliminar("despesas", id, `Despesa eliminada - ${despesaToDelete?.descricao || "N/A"}`, despesaToDelete)
-  toast.success("Despesa eliminada")
+      const despesaToDelete = despesas.find(d => d.id === id)
+      const { error } = await supabase.from("despesas").delete().eq("id", id)
+      if (error) throw error
+      setDespesas((prev) => prev.filter((d) => d.id !== id))
+      await logEliminar("despesas", id, `Despesa eliminada - ${despesaToDelete?.descricao || "N/A"}`, despesaToDelete)
+      toast.success("Despesa eliminada")
     } catch {
       toast.error("Erro ao eliminar despesa")
     }
