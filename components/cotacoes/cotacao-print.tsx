@@ -1,6 +1,7 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import Image from "next/image"
 import type { Empresa, Cliente } from "@/lib/types"
 
@@ -39,6 +40,16 @@ export function CotacaoPrint({
   onClose,
 }: CotacaoPrintProps) {
   const printRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    // Esconder o body scroll quando o modal está aberto
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [])
 
   const [numeroCotacao, setNumeroCotacao] = useState(initialNumeroCotacao)
   const [dataCotacao, setDataCotacao] = useState(initialDataCotacao)
@@ -414,7 +425,9 @@ export function CotacaoPrint({
 
   // Renderização única: o documento é mostrado na tela e na impressão
   // A barra de ferramentas só aparece na tela e é ocultada na impressão via CSS.
-  return (
+  // Usamos createPortal para renderizar fora do contexto do dashboard
+  
+  const content = (
     <div className="cotacao-print-container">
       {/* Barra de ferramentas visível apenas na tela */}
       <div className="toolbar print-hide">
@@ -552,4 +565,8 @@ export function CotacaoPrint({
       `}</style>
     </div>
   )
+
+  // Renderizar no body usando createPortal para garantir que fica acima de tudo
+  if (!mounted) return null
+  return createPortal(content, document.body)
 }
