@@ -60,21 +60,13 @@ export function CotacaoPrint({
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-MZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 
-  const formatDateDisplay = (dateStr: string) => {
-    if (!dateStr) return ""
-    const d = new Date(dateStr)
-    return d.toLocaleDateString("pt-MZ", { day: "2-digit", month: "long", year: "numeric" })
-  }
-
   const calcularValidadeDias = () => {
     if (!dataCotacao || !dataValidade) return "05 Dias"
-    const inicio = new Date(dataCotacao)
-    const fim = new Date(dataValidade)
-    const diff = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24))
+    const diff = Math.ceil((new Date(dataValidade).getTime() - new Date(dataCotacao).getTime()) / 86400000)
     return `${String(diff).padStart(2, "0")} Dias`
   }
 
-  // Número por extenso
+  // Número por extenso (igual ao original)
   const numeroParaExtenso = (valor: number): string => {
     const unidades = ["", "Um", "Dois", "Três", "Quatro", "Cinco", "Seis", "Sete", "Oito", "Nove"]
     const especiais = ["Dez", "Onze", "Doze", "Treze", "Catorze", "Quinze", "Dezasseis", "Dezassete", "Dezoito", "Dezanove"]
@@ -135,457 +127,426 @@ export function CotacaoPrint({
   }
   const linhasNotas = obterLinhasDeNotas()
 
-  // Preencher linhas vazias até mínimo de 5 para visual da tabela
-  const LINHAS_MIN = 5
+  const LINHAS_MIN = 6
   const linhasVazias = Math.max(0, LINHAS_MIN - linhas.length)
 
-  const s: Record<string, React.CSSProperties> = {
-    page: {
-      background: "white",
-      width: "210mm",
-      minHeight: "297mm",
-      padding: "15mm",
-      fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
-      color: "#000",
-      boxSizing: "border-box",
-    },
-    // ── Header ──
-    header: { display: "flex", justifyContent: "space-between", marginBottom: "10px" },
-    companyBox: {
-      border: "1.5px solid #000",
-      borderRadius: "15px",
-      padding: "15px",
-      width: "48%",
-      fontSize: "11px",
-      lineHeight: "1.3",
-    },
-    logoArea: { display: "flex", alignItems: "center", marginBottom: "6px" },
-    logoText: { fontSize: "18px", fontWeight: "bold", color: "#1a3a5c", marginLeft: "8px", letterSpacing: "-0.5px", textTransform: "uppercase" },
-    companySubtitle: { fontSize: "9px", color: "#333", marginBottom: "4px", fontStyle: "italic" },
-    companyServices: { fontSize: "10px", color: "#004b87", marginBottom: "4px" },
-    rightHeader: { width: "48%", display: "flex", flexDirection: "column", justifyContent: "space-between" },
-    docTitleBox: {
-      border: "1.5px solid #000",
-      borderRadius: "10px",
-      padding: "10px",
-      textAlign: "center",
-      fontSize: "16px",
-      fontWeight: "bold",
-    },
-    clientBox: {
-      border: "1.5px solid #000",
-      borderRadius: "15px",
-      padding: "12px",
-      fontSize: "11px",
-      lineHeight: "1.6",
-      flexGrow: 1,
-      marginTop: "10px",
-    },
-    // ── Divider ──
-    divider: {
-      borderTop: "1.5px solid #000",
-      borderBottom: "1.5px solid #000",
-      height: "4px",
-      margin: "10px 0",
-    },
-    // ── Pre-table ──
-    preTableInfo: { display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "5px", fontWeight: "bold" },
-    // ── Table ──
-    table: { width: "100%", borderCollapse: "collapse" as const, fontSize: "11px", marginBottom: "10px" },
-    th: { border: "1px solid #000", padding: "4px 6px", backgroundColor: "#e6f0fa", fontWeight: "bold", textAlign: "center" as const },
-    td: { border: "1px solid #000", padding: "4px 6px" },
-    tdCenter: { border: "1px solid #000", padding: "4px 6px", textAlign: "center" as const },
-    tdRight: { border: "1px solid #000", padding: "4px 6px", textAlign: "right" as const },
-    // ── Summary ──
-    summaryArea: { display: "flex", justifyContent: "space-between", marginBottom: "15px", alignItems: "flex-start" },
-    taxReason: {
-      border: "1.5px solid #000",
-      width: "55%",
-      padding: "8px",
-      fontSize: "11px",
-      minHeight: "50px",
-    },
-    totalsTable: { width: "40%", borderCollapse: "collapse" as const },
-    totalsTableTd: { border: "1.5px solid #000", padding: "4px 8px", fontSize: "11px", fontWeight: "bold" },
-    // ── Footer details ──
-    footerDetails: { display: "flex", justifyContent: "space-between", marginBottom: "15px", alignItems: "flex-start" },
-    bankBoxes: { display: "flex", gap: "10px", width: "60%" },
-    bankBox: {
-      border: "1.5px solid #000",
-      borderRadius: "15px",
-      padding: "10px",
-      fontSize: "10px",
-      lineHeight: "1.4",
-      width: "50%",
-    },
-    signatureBox: {
-      width: "35%",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      paddingTop: "30px",
-    },
-    sigLine: { width: "100%", borderBottom: "1px dotted #000", marginBottom: "5px" },
-    // ── Bottom footer ──
-    systemInfo: {
-      display: "flex",
-      justifyContent: "space-between",
-      borderTop: "1.5px solid #000",
-      borderBottom: "1.5px solid #000",
-      padding: "3px 0",
-      marginBottom: "8px",
-      fontSize: "11px",
-    },
-    editInput: {
-      background: "transparent",
-      border: "none",
-      borderBottom: "1px dashed #999",
-      outline: "none",
-      fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
-      color: "#000",
-      width: "100%",
-    },
-    editInputCenter: {
-      background: "transparent",
-      border: "none",
-      borderBottom: "1px dashed #999",
-      outline: "none",
-      fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
-      color: "#000",
-      textAlign: "center" as const,
-      width: "100%",
-    },
-    editInputRight: {
-      background: "transparent",
-      border: "none",
-      borderBottom: "1px dashed #999",
-      outline: "none",
-      fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
-      color: "#000",
-      textAlign: "right" as const,
-      width: "100%",
-    },
+  const inputBase: React.CSSProperties = {
+    background: "transparent",
+    border: "none",
+    borderBottom: "1px dashed #aaa",
+    outline: "none",
+    fontFamily: "Arial,sans-serif",
+    fontSize: "13px",
+    color: "#000",
+    padding: "1px 2px",
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-auto">
-      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full">
-
-        {/* ── Toolbar (screen only) ── */}
-        <div className="sticky top-0 bg-white border-b px-6 py-3 flex items-center justify-between print:hidden z-10">
-          <h2 className="text-base font-semibold text-gray-700">Pré-visualização — Clique nos campos para editar</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-[#1a3a5c] text-white rounded hover:bg-[#2d4373] text-sm transition-colors"
-            >
-              Imprimir / PDF
-            </button>
-            <button onClick={onClose} className="px-4 py-2 border rounded text-sm hover:bg-gray-50 transition-colors">
-              Fechar
-            </button>
+  // Componente do documento (apenas uma instância)
+  const Doc = () => (
+    <div
+      ref={printRef}
+      id="cotacao-print"
+      style={{
+        fontFamily: "Arial,sans-serif",
+        fontSize: "13px",
+        color: "#000",
+        background: "white",
+        width: "210mm",
+        minHeight: "297mm",
+        padding: "14mm 15mm",
+        boxSizing: "border-box",
+        margin: "0 auto", // centraliza na tela, mas na impressão fica no canto
+      }}
+    >
+      {/* HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
+        <div style={{ border: "1.5px solid #000", borderRadius: "14px", padding: "14px 16px", width: "48%", lineHeight: "1.55" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+            <Image src="/images/magic-pro-logo.png" alt="Logo" width={52} height={52} style={{ objectFit: "contain" }} />
+            <div>
+              <div style={{ fontSize: "16px", fontWeight: "bold", color: "#1a3a5c", textTransform: "uppercase" }}>Magic Pro Services</div>
+              <div style={{ fontSize: "10px", fontStyle: "italic", color: "#555" }}>A Sua Satisfação é o Nosso Objectivo</div>
+            </div>
           </div>
+          <div style={{ fontSize: "11px", color: "#004b87", marginBottom: "3px" }}>Serviços | Consultoria | Soluções</div>
+          <div>NUIT: {empresa?.nuit || "—"}</div>
+          <div>Tel.: 86 73 400 18 / 82 73 400 17</div>
+          <div>Email: info@magicproservices.com</div>
+          <div>Av: FPLM, Nº 1710, R/C-2 — Maputo</div>
         </div>
 
-        {/* ── Printable area ── */}
-        <div ref={printRef} style={s.page} id="cotacao-print">
-
-          {/* ════ 1. HEADER ════ */}
-          <div style={s.header}>
-            {/* Left: Company box */}
-            <div style={s.companyBox}>
-              <div style={s.logoArea}>
-                <Image src="/images/magic-pro-logo.png" alt="Magic Pro Services" width={48} height={48} style={{ objectFit: "contain" }} />
-                <div style={s.logoText}>Magic Pro Services</div>
-              </div>
-              <div style={s.companySubtitle}>A Sua Satisfação é o Nosso Objectivo</div>
-              <div style={s.companyServices}>Serviços | Consultoria | Soluções</div>
-              <div>Av: FPLM, Nº 1710, R/C-2 — Maputo</div>
-              <div>Tel.: 86 73 400 18 / 82 73 400 17</div>
-              <div>Email: info@magicproservices.com</div>
-              <div>NUIT: {empresa?.nuit || "—"}</div>
-            </div>
-
-            {/* Right: Doc title + Client */}
-            <div style={s.rightHeader}>
-              <div style={s.docTitleBox}>
-                <span style={{ color: "#d32f2f" }}>Cotação nº&nbsp;</span>
+        <div style={{ width: "48%", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ border: "1.5px solid #000", borderRadius: "10px", padding: "11px", textAlign: "center" }}>
+            <span style={{ color: "#d32f2f", fontSize: "17px", fontWeight: "bold" }}>Cotação nº&nbsp;</span>
+            <input
+              type="text"
+              value={numeroCotacao}
+              onChange={(e) => setNumeroCotacao(e.target.value)}
+              style={{ ...inputBase, width: "80px", display: "inline", fontSize: "17px", fontWeight: "bold", textAlign: "center", borderBottom: "1.5px solid #d32f2f" }}
+            />
+          </div>
+          <div style={{ border: "1.5px solid #000", borderRadius: "14px", padding: "12px 14px", lineHeight: "1.9", flexGrow: 1 }}>
+            {[
+              { label: "Ex. Senhor(a):", val: clienteNome, set: setClienteNome, ph: "Nome / Empresa", w: 112 },
+              { label: "Endereço:", val: clienteEndereco, set: setClienteEndereco, ph: "Endereço", w: 80 },
+              { label: "NUIT:", val: clienteNuit, set: setClienteNuit, ph: "NUIT", w: 50 },
+              { label: "Tel./Cel:", val: clienteTelefone, set: setClienteTelefone, ph: "Telefone", w: 74 },
+            ].map(({ label, val, set, ph, w }) => (
+              <div key={label}>
+                <strong>{label}&nbsp;</strong>
                 <input
                   type="text"
-                  value={numeroCotacao}
-                  onChange={(e) => setNumeroCotacao(e.target.value)}
-                  style={{ ...s.editInputCenter, width: "80px", display: "inline", fontWeight: "bold", fontSize: "16px" }}
+                  value={val}
+                  onChange={(e) => set(e.target.value)}
+                  style={{ ...inputBase, width: `calc(100% - ${w}px)`, display: "inline" }}
+                  placeholder={ph}
                 />
               </div>
-              <div style={s.clientBox}>
-                <div style={{ marginBottom: "3px" }}>
-                  <span style={{ fontWeight: "bold" }}>Ex. Senhor(a): </span>
-                  <input type="text" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)}
-                    style={{ ...s.editInput, width: "calc(100% - 100px)", display: "inline" }}
-                    placeholder="Nome / Empresa" />
-                </div>
-                <div style={{ marginBottom: "3px" }}>
-                  <span style={{ fontWeight: "bold" }}>Endereço: </span>
-                  <input type="text" value={clienteEndereco} onChange={(e) => setClienteEndereco(e.target.value)}
-                    style={{ ...s.editInput, width: "calc(100% - 70px)", display: "inline" }}
-                    placeholder="Endereço" />
-                </div>
-                <div style={{ marginBottom: "3px" }}>
-                  <span style={{ fontWeight: "bold" }}>NUIT: </span>
-                  <input type="text" value={clienteNuit} onChange={(e) => setClienteNuit(e.target.value)}
-                    style={{ ...s.editInput, width: "calc(100% - 45px)", display: "inline" }}
-                    placeholder="NUIT" />
-                </div>
-                <div>
-                  <span style={{ fontWeight: "bold" }}>Tel./Cel: </span>
-                  <input type="text" value={clienteTelefone} onChange={(e) => setClienteTelefone(e.target.value)}
-                    style={{ ...s.editInput, width: "calc(100% - 65px)", display: "inline" }}
-                    placeholder="Telefone" />
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-
-          {/* ════ 2. DOUBLE DIVIDER ════ */}
-          <div style={s.divider} />
-
-          {/* ════ 3. PRE-TABLE INFO ════ */}
-          <div style={s.preTableInfo}>
-            <div>
-              <span style={{ color: "#d32f2f", fontWeight: "normal" }}>Objecto:&nbsp;</span>
-              <input type="text" value={objecto} onChange={(e) => setObjecto(e.target.value)}
-                style={{ ...s.editInput, width: "250px", display: "inline", fontWeight: "normal" }}
-                placeholder="Descrição do objecto..." />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <input type="text" value={localidade} onChange={(e) => setLocalidade(e.target.value)}
-                style={{ ...s.editInput, width: "80px", display: "inline" }} />
-              <span>:</span>
-              <input type="date" value={dataCotacao} onChange={(e) => setDataCotacao(e.target.value)}
-                style={{ ...s.editInput, width: "130px", display: "inline" }} />
-            </div>
-          </div>
-
-          {/* ════ 4. MAIN TABLE ════ */}
-          <table style={s.table}>
-            <thead>
-              <tr>
-                <th style={{ ...s.th, width: "5%" }}>Ord.</th>
-                <th style={{ ...s.th, width: "55%", textAlign: "left" }}>Descrição</th>
-                <th style={{ ...s.th, width: "8%" }}>Qy</th>
-                <th style={{ ...s.th, width: "15%" }}>P.U</th>
-                <th style={{ ...s.th, width: "17%" }}>Valor</th>
-                <th style={{ ...s.th, width: "5%" }} className="print:hidden">—</th>
-              </tr>
-            </thead>
-            <tbody>
-              {linhas.map((linha, index) => (
-                <tr key={linha.id}>
-                  <td style={s.tdCenter}>{index + 1}</td>
-                  <td style={s.td}>
-                    <input type="text" value={linha.descricao}
-                      onChange={(e) => atualizarLinha(linha.id, "descricao", e.target.value)}
-                      style={s.editInput} placeholder="Descrição..." />
-                  </td>
-                  <td style={s.tdCenter}>
-                    <input type="number" value={linha.quantidade} min={1}
-                      onChange={(e) => atualizarLinha(linha.id, "quantidade", e.target.value)}
-                      style={s.editInputCenter} />
-                  </td>
-                  <td style={s.tdRight}>
-                    <input type="number" value={linha.preco_unitario} min={0} step={0.01}
-                      onChange={(e) => atualizarLinha(linha.id, "preco_unitario", e.target.value)}
-                      style={s.editInputRight} />
-                  </td>
-                  <td style={s.tdRight}>{formatCurrency(linha.preco_unitario * linha.quantidade)}</td>
-                  <td style={s.tdCenter} className="print:hidden">
-                    <button onClick={() => removerLinha(linha.id)} style={{ color: "#c00", cursor: "pointer", fontWeight: "bold", fontSize: "14px", background: "none", border: "none" }} title="Remover">×</button>
-                  </td>
-                </tr>
-              ))}
-
-              {/* Linhas vazias para preenchimento visual */}
-              {Array.from({ length: linhasVazias }).map((_, i) => (
-                <tr key={`vazia-${i}`}>
-                  <td style={s.tdCenter}>{linhas.length + i + 1}</td>
-                  <td style={s.td}>&nbsp;</td>
-                  <td style={s.tdCenter}></td>
-                  <td style={s.tdRight}></td>
-                  <td style={s.tdRight}>{i === linhasVazias - 1 ? "—" : ""}</td>
-                  <td className="print:hidden" style={s.tdCenter}></td>
-                </tr>
-              ))}
-
-              {/* Botão adicionar (screen only) */}
-              <tr className="print:hidden">
-                <td colSpan={6} style={{ ...s.td, textAlign: "center", padding: "6px" }}>
-                  <button onClick={adicionarLinha}
-                    style={{ color: "#1a3a5c", fontWeight: "bold", cursor: "pointer", background: "none", border: "none", fontSize: "12px" }}>
-                    + Adicionar Linha
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          {/* ════ 5. SUMMARY AREA ════ */}
-          <div style={s.summaryArea}>
-            {/* Left: tax reason */}
-            <div style={s.taxReason}>
-              <div style={{ fontSize: "10px", color: "#555", marginBottom: "4px" }}>Motivo da não aplicação do Imposto:</div>
-              <div style={{ borderBottom: "1px solid #ccc", marginBottom: "4px" }}>&nbsp;</div>
-              <div style={{ borderBottom: "1px solid #ccc" }}>&nbsp;</div>
-            </div>
-
-            {/* Right: totals */}
-            <table style={s.totalsTable}>
-              <tbody>
-                <tr>
-                  <td style={{ ...s.totalsTableTd, width: "45%" }}>Sub-total</td>
-                  <td style={{ ...s.totalsTableTd, textAlign: "right" }}>{formatCurrency(subtotal)}</td>
-                </tr>
-                <tr>
-                  <td style={s.totalsTableTd}>IVA 16%</td>
-                  <td style={{ ...s.totalsTableTd, textAlign: "right" }}>{iva > 0 ? formatCurrency(iva) : "—"}</td>
-                </tr>
-                <tr>
-                  <td style={{ ...s.totalsTableTd, fontSize: "12px" }}>Total</td>
-                  <td style={{ ...s.totalsTableTd, textAlign: "right", fontSize: "12px" }}>{formatCurrency(total)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Valor por extenso */}
-          <div style={{ fontSize: "11px", fontStyle: "italic", marginBottom: "15px" }}>
-            <strong>São: </strong>{numeroParaExtenso(total)}.
-          </div>
-
-          {/* ════ 6. FOOTER DETAILS ════ */}
-          <div style={s.footerDetails}>
-            {/* Bank boxes */}
-            <div style={s.bankBoxes}>
-              <div style={s.bankBox}>
-                <strong style={{ fontSize: "11px", display: "block", marginBottom: "3px" }}>Dados Bancários</strong>
-                MOZA BANCO<br />
-                Nº da Conta: 3903555910001<br />
-                NIB: 003400003903555910165<br />
-                Titular: <strong>Magic Pro Services</strong>
-              </div>
-              <div style={s.bankBox}>
-                <strong style={{ fontSize: "11px", display: "block", marginBottom: "3px" }}>Dados Bancários</strong>
-                ABSA<br />
-                Nº da Conta: 0007102004618<br />
-                NIB: 000200070710200461876<br />
-                Validade: <strong>{calcularValidadeDias()}</strong>
-              </div>
-            </div>
-
-            {/* Signature */}
-            <div style={s.signatureBox}>
-              <div style={s.sigLine} />
-              <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px" }}>
-                <input
-                  type="text"
-                  value={diretorGeralNome}
-                  onChange={(e) => setDiretorGeralNome(e.target.value)}
-                  style={{ ...s.editInputCenter, width: `${Math.max(diretorGeralNome.length * 7, 100)}px` }}
-                />
-                <span>— Director Geral</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ════ 7. NOTAS ════ */}
-          {linhasNotas.length > 0 && (
-            <div style={{ border: "1.5px solid #000", marginBottom: "15px" }}>
-              <div style={{ background: "#e6f0fa", fontWeight: "bold", padding: "4px 8px", borderBottom: "1px solid #000", fontSize: "11px", textAlign: "center" }}>
-                NOTA
-              </div>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10px" }}>
-                <tbody>
-                  {linhasNotas.map((nota, index) => (
-                    <tr key={nota.id} style={{ background: index % 2 === 0 ? "#f9f9f9" : "white" }}>
-                      <td style={{ ...s.td, width: "32px", textAlign: "center", verticalAlign: "top" }}>{nota.id}</td>
-                      <td style={{ ...s.td, whiteSpace: "pre-wrap" }}>{nota.conteudo}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* ════ 8. BOTTOM FOOTER ════ */}
-          <div>
-            <div style={{ fontSize: "9px", marginBottom: "2px" }}>NL</div>
-            <div style={s.systemInfo}>
-              <div>©Documento Processado pelo Computador</div>
-              <div>{new Date().toLocaleDateString("pt-MZ")} {new Date().toLocaleTimeString("pt-MZ", { hour: "2-digit", minute: "2-digit" })}</div>
-            </div>
-            <div style={{ fontSize: "8px", color: "#666" }}>
-              Serviços | Consultoria | Soluções Técnicas — Magic Pro Services, Lda.
-            </div>
-          </div>
-
-        </div>{/* end printable area */}
+        </div>
       </div>
 
-      {/* Print styles */}
+      <div style={{ borderTop: "2px solid #000", borderBottom: "2px solid #000", height: "5px", margin: "10px 0" }} />
+
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "7px", fontWeight: "bold", alignItems: "center" }}>
+        <div>
+          <span style={{ color: "#d32f2f", fontWeight: "normal" }}>Objecto:&nbsp;</span>
+          <input
+            type="text"
+            value={objecto}
+            onChange={(e) => setObjecto(e.target.value)}
+            style={{ ...inputBase, width: "250px", display: "inline", fontWeight: "normal" }}
+            placeholder="Descrição do objecto..."
+          />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+          <input
+            type="text"
+            value={localidade}
+            onChange={(e) => setLocalidade(e.target.value)}
+            style={{ ...inputBase, width: "80px", display: "inline", textAlign: "right" }}
+          />
+          <span>:</span>
+          <input
+            type="date"
+            value={dataCotacao}
+            onChange={(e) => setDataCotacao(e.target.value)}
+            style={{ ...inputBase, width: "140px", display: "inline" }}
+          />
+        </div>
+      </div>
+
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", marginBottom: "12px" }}>
+        <thead>
+          <tr>
+            {[
+              ["Ord.", "5%", "center"],
+              ["Descrição", "56%", "left"],
+              ["Qy", "8%", "center"],
+              ["P.U", "14%", "right"],
+              ["Valor", "17%", "right"],
+            ].map(([h, w, a]) => (
+              <th key={h} style={{ border: "1px solid #000", padding: "7px 6px", background: "#e6f0fa", textAlign: a as any, width: w, fontWeight: "bold" }}>
+                {h}
+              </th>
+            ))}
+            <th style={{ border: "1px solid #000", padding: "7px 4px", background: "#e6f0fa", width: "4%" }} className="print-hide">—</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((linha, index) => (
+            <tr key={linha.id} style={{ height: "30px" }}>
+              <td style={{ border: "1px solid #000", padding: "5px 6px", textAlign: "center" }}>{index + 1}</td>
+              <td style={{ border: "1px solid #000", padding: "5px 6px" }}>
+                <input
+                  type="text"
+                  value={linha.descricao}
+                  onChange={(e) => atualizarLinha(linha.id, "descricao", e.target.value)}
+                  style={{ ...inputBase, borderBottom: "none", width: "100%" }}
+                  placeholder="Descrição..."
+                />
+              </td>
+              <td style={{ border: "1px solid #000", padding: "5px 6px" }}>
+                <input
+                  type="number"
+                  value={linha.quantidade}
+                  min={1}
+                  onChange={(e) => atualizarLinha(linha.id, "quantidade", e.target.value)}
+                  style={{ ...inputBase, textAlign: "center", borderBottom: "none", width: "100%" }}
+                />
+              </td>
+              <td style={{ border: "1px solid #000", padding: "5px 6px" }}>
+                <input
+                  type="number"
+                  value={linha.preco_unitario}
+                  min={0}
+                  step={0.01}
+                  onChange={(e) => atualizarLinha(linha.id, "preco_unitario", e.target.value)}
+                  style={{ ...inputBase, textAlign: "right", borderBottom: "none", width: "100%" }}
+                />
+              </td>
+              <td style={{ border: "1px solid #000", padding: "5px 6px", textAlign: "right", fontWeight: "bold" }}>
+                {linha.preco_unitario > 0 ? formatCurrency(linha.preco_unitario * linha.quantidade) : ""}
+              </td>
+              <td style={{ border: "1px solid #000", padding: "5px 6px", textAlign: "center" }} className="print-hide">
+                <button
+                  onClick={() => removerLinha(linha.id)}
+                  style={{ color: "#c00", cursor: "pointer", fontWeight: "bold", fontSize: "18px", background: "none", border: "none", lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </td>
+            </tr>
+          ))}
+
+          {Array.from({ length: linhasVazias }).map((_, i) => (
+            <tr key={`v-${i}`} style={{ height: "30px" }}>
+              <td style={{ border: "1px solid #000", padding: "5px 6px", textAlign: "center" }}>{linhas.length + i + 1}</td>
+              <td style={{ border: "1px solid #000" }}>&nbsp;</td>
+              <td style={{ border: "1px solid #000" }}></td>
+              <td style={{ border: "1px solid #000" }}></td>
+              <td style={{ border: "1px solid #000", padding: "5px 6px", textAlign: "right" }}>{i === linhasVazias - 1 ? "—" : ""}</td>
+              <td style={{ border: "1px solid #000" }} className="print-hide"></td>
+            </tr>
+          ))}
+
+          <tr className="print-hide">
+            <td colSpan={6} style={{ border: "1px solid #000", padding: "8px", textAlign: "center" }}>
+              <button
+                onClick={adicionarLinha}
+                style={{ color: "#1a3a5c", fontWeight: "bold", cursor: "pointer", background: "none", border: "none", fontSize: "13px" }}
+              >
+                + Adicionar Linha
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "14px", alignItems: "flex-start", gap: "16px" }}>
+        <div style={{ border: "1.5px solid #000", width: "55%", padding: "10px", fontSize: "12px", minHeight: "60px" }}>
+          <div style={{ color: "#444", marginBottom: "8px" }}>Motivo da não aplicação do Imposto:</div>
+          <div style={{ borderBottom: "1px solid #ccc", marginBottom: "8px" }} />
+          <div style={{ borderBottom: "1px solid #ccc" }} />
+        </div>
+        <table style={{ width: "42%", borderCollapse: "collapse" }}>
+          <tbody>
+            {[
+              { label: "Sub-total", val: formatCurrency(subtotal), bold: false },
+              { label: "IVA 16%", val: iva > 0 ? formatCurrency(iva) : "—", bold: false },
+              { label: "Total", val: formatCurrency(total), bold: true },
+            ].map(({ label, val, bold }) => (
+              <tr key={label}>
+                <td style={{ border: "1.5px solid #000", padding: "7px 10px", fontWeight: "bold", fontSize: bold ? "14px" : "13px", width: "44%" }}>
+                  {label}
+                </td>
+                <td style={{ border: "1.5px solid #000", padding: "7px 10px", textAlign: "right", fontWeight: "bold", fontSize: bold ? "14px" : "13px" }}>
+                  {val}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ fontSize: "12px", fontStyle: "italic", marginBottom: "18px" }}>
+        <strong>São:&nbsp;</strong>{numeroParaExtenso(total)}.
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "18px", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: "12px", width: "60%" }}>
+          {[
+            { nome: "MOZA BANCO", conta: "3903555910001", nib: "003400003903555910165", extra: <><strong>Titular:</strong> Magic Pro Services</> },
+            { nome: "ABSA", conta: "0007102004618", nib: "000200070710200461876", extra: <><strong>Validade:</strong> {calcularValidadeDias()}</> },
+          ].map((b) => (
+            <div key={b.nome} style={{ border: "1.5px solid #000", borderRadius: "14px", padding: "12px", fontSize: "12px", lineHeight: "1.65", width: "50%" }}>
+              <strong style={{ display: "block", marginBottom: "4px", fontSize: "13px" }}>Dados Bancários</strong>
+              {b.nome}<br />
+              Nº da Conta: {b.conta}<br />
+              NIB: {b.nib}<br />
+              {b.extra}
+            </div>
+          ))}
+        </div>
+        <div style={{ width: "35%", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "32px" }}>
+          <div style={{ width: "100%", borderBottom: "1px dotted #000", marginBottom: "7px" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+            <input
+              type="text"
+              value={diretorGeralNome}
+              onChange={(e) => setDiretorGeralNome(e.target.value)}
+              style={{ ...inputBase, width: `${Math.max(diretorGeralNome.length * 8, 100)}px`, display: "inline", fontSize: "12px" }}
+            />
+            <span>— Director Geral</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ border: "1.5px solid #000", marginBottom: "16px" }}>
+        <div style={{ background: "#e6f0fa", fontWeight: "bold", padding: "5px 10px", borderBottom: "1px solid #000", fontSize: "13px", textAlign: "center" }}>
+          NOTA
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+          <tbody>
+            {linhasNotas.map((nota, i) => (
+              <tr key={nota.id} style={{ background: i % 2 === 0 ? "#f7f7f7" : "white" }}>
+                <td style={{ border: "1px solid #ccc", padding: "5px 8px", width: "36px", textAlign: "center", verticalAlign: "top" }}>
+                  {nota.id}
+                </td>
+                <td style={{ border: "1px solid #ccc", padding: "5px 8px", whiteSpace: "pre-wrap" }}>{nota.conteudo}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <div style={{ fontSize: "9px", marginBottom: "2px" }}>NL</div>
+        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1.5px solid #000", borderBottom: "1.5px solid #000", padding: "4px 0", marginBottom: "8px", fontSize: "12px" }}>
+          <span>©Documento Processado pelo Computador</span>
+          <span>{new Date().toLocaleDateString("pt-MZ")} {new Date().toLocaleTimeString("pt-MZ", { hour: "2-digit", minute: "2-digit" })}</span>
+        </div>
+        <div style={{ fontSize: "9px", color: "#555" }}>Serviços | Consultoria | Soluções Técnicas — Magic Pro Services, Lda.</div>
+      </div>
+    </div>
+  )
+
+  // Renderização única: o documento é mostrado na tela e na impressão
+  // A barra de ferramentas só aparece na tela e é ocultada na impressão via CSS.
+  return (
+    <div className="cotacao-print-container">
+      {/* Barra de ferramentas visível apenas na tela */}
+      <div className="toolbar print-hide">
+        <span>Pré‑visualização — Clique nos campos para editar</span>
+        <div>
+          <button onClick={() => window.print()}>🖨 Imprimir / PDF</button>
+          <button onClick={onClose}>Fechar</button>
+        </div>
+      </div>
+
+      {/* Área de visualização em tela (com fundo cinza e centralizada) */}
+      <div className="screen-preview print-hide">
+        <Doc />
+      </div>
+
+      {/* Bloco exclusivo para impressão (sem estilos de tela) */}
+      <div className="print-only">
+        <Doc />
+      </div>
+
       <style jsx global>{`
+        /* Estilos para a barra de ferramentas e preview em tela */
+        .cotacao-print-container {
+          position: fixed;
+          inset: 0;
+          background: #6b7280;
+          overflow: auto;
+          z-index: 9999;
+        }
+        .toolbar {
+          position: sticky;
+          top: 0;
+          background: white;
+          border-bottom: 1px solid #e5e7eb;
+          padding: 10px 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          box-shadow: 0 1px 4px rgba(0,0,0,.12);
+          z-index: 10;
+        }
+        .toolbar span {
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+        }
+        .toolbar button:first-child {
+          padding: 8px 20px;
+          background: #1a3a5c;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          font-weight: 500;
+          margin-right: 8px;
+        }
+        .toolbar button:last-child {
+          padding: 8px 16px;
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+        }
+        .screen-preview {
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          padding: 68px 20px 40px;
+          background: #6b7280;
+          min-height: 100vh;
+        }
+        .screen-preview > div {
+          box-shadow: 0 8px 32px rgba(0,0,0,.4);
+        }
+
+        /* Bloco de impressão oculto na tela */
+        .print-only {
+          display: none;
+        }
+
+        /* Regras para impressão */
         @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0; /* Remove as margens padrão do navegador */
+          /* Ocultar elementos de tela na impressão */
+          .print-hide {
+            display: none !important;
           }
-          
+          /* Mostrar bloco de impressão */
+          .print-only {
+            display: block !important;
+          }
+          /* Esconde tudo que não é a área de impressão */
           body {
             margin: 0;
             padding: 0;
             background: white;
           }
-
-          /* Esconde TUDO na página por defeito */
-          body * { 
-            visibility: hidden; 
+          .cotacao-print-container,
+          .cotacao-print-container * {
+            visibility: hidden;
           }
-
-          /* Esconde os scrollbars e backgrounds escuros do modal do Tailwind */
-          .fixed, .inset-0, .bg-black\\/50 {
-            position: static !important;
-            background: transparent !important;
-            overflow: visible !important;
+          .print-only,
+          .print-only * {
+            visibility: visible;
           }
-
-          /* Torna apenas a área da cotação visível e reseta o posicionamento */
-          #cotacao-print, #cotacao-print * { 
-            visibility: visible; 
-          }
-          
-          #cotacao-print {
+          .print-only {
             position: absolute;
-            left: 0; 
             top: 0;
-            width: 210mm; /* Largura exata do A4 */
-            min-height: 297mm; /* Altura exata do A4 */
-            margin: 0;
-            padding: 15mm; /* Margens internas da impressão */
+            left: 0;
+            width: 100%;
+          }
+          /* Garante que o documento ocupe a página A4 */
+          #cotacao-print {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 14mm 15mm;
+            margin: 0 auto;
+            background: white;
             box-sizing: border-box;
-            background: white !important;
           }
-
-          .print\\:hidden { 
-            display: none !important; 
+          /* Preservar cores na impressão */
+          * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            color-adjust: exact;
           }
-
-          /* Garante que as cores de fundo (ex: cabeçalho da tabela azulzinho) aparecem na impressão */
-          #cotacao-print * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+          /* Remove bordas tracejadas dos inputs (opcional) */
+          input {
+            border: none !important;
+            outline: none !important;
+            background: transparent !important;
           }
         }
       `}</style>
