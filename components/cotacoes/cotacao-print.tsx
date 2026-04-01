@@ -538,21 +538,55 @@ export function CotacaoPrint({
       {/* Print styles */}
       <style jsx global>{`
         @media print {
-          body * { visibility: hidden; }
-          #cotacao-print, #cotacao-print * { visibility: visible; }
-          #cotacao-print {
-            position: absolute;
-            left: 0; top: 0;
-            width: 210mm;
-            padding: 12mm 15mm;
+          @page {
+            size: A4 portrait;
+            margin: 0; /* Remove as margens padrão do navegador */
+          }
+          
+          body {
+            margin: 0;
+            padding: 0;
             background: white;
           }
-          .print\\:hidden { display: none !important; }
+
+          /* Esconde TUDO na página por defeito */
+          body * { 
+            visibility: hidden; 
+          }
+
+          /* Esconde os scrollbars e backgrounds escuros do modal do Tailwind */
+          .fixed, .inset-0, .bg-black\\/50 {
+            position: static !important;
+            background: transparent !important;
+            overflow: visible !important;
+          }
+
+          /* Torna apenas a área da cotação visível e reseta o posicionamento */
+          #cotacao-print, #cotacao-print * { 
+            visibility: visible; 
+          }
+          
+          #cotacao-print {
+            position: absolute;
+            left: 0; 
+            top: 0;
+            width: 210mm; /* Largura exata do A4 */
+            min-height: 297mm; /* Altura exata do A4 */
+            margin: 0;
+            padding: 15mm; /* Margens internas da impressão */
+            box-sizing: border-box;
+            background: white !important;
+          }
+
+          .print\\:hidden { 
+            display: none !important; 
+          }
+
+          /* Garante que as cores de fundo (ex: cabeçalho da tabela azulzinho) aparecem na impressão */
           #cotacao-print * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          @page { size: A4; margin: 0; }
         }
       `}</style>
     </div>
