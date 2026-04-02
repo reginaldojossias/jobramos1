@@ -141,15 +141,12 @@ export function CotacaoPrint({
     padding: "1px 2px",
   }
 
-  // NOVA LÓGICA DE IMPRESSÃO PROFISSIONAL (ISOLADA DA PÁGINA)
   const handlePrint = () => {
     const printElement = document.getElementById("cotacao-print");
     if (!printElement) return;
 
-    // Clona o elemento para não afetar o documento visível
     const clone = printElement.cloneNode(true) as HTMLElement;
 
-    // Garante que os valores digitados (inputs) passam para o clone a imprimir
     const originalInputs = printElement.querySelectorAll("input, textarea");
     const clonedInputs = clone.querySelectorAll("input, textarea");
     originalInputs.forEach((input: any, index) => {
@@ -162,7 +159,6 @@ export function CotacaoPrint({
       }
     });
 
-    // Cria um iframe invisível para isolar completamente do Dashboard
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
@@ -175,14 +171,13 @@ export function CotacaoPrint({
     const iframeDoc = iframe.contentWindow?.document;
     if (!iframeDoc) return;
 
-    // Copia os estilos da página atual para não perder design e fontes
     const styleTags = document.querySelectorAll("style, link[rel='stylesheet']");
     let stylesHtml = "";
     styleTags.forEach((tag) => {
       stylesHtml += tag.outerHTML;
     });
 
-    // Força regras A4 restritas apenas para este Iframe
+    // Força regras A4 restritas e garante que o display column se aplica para atirar assinatura para o fim
     stylesHtml += `
       <style>
         @page { size: A4; margin: 0; }
@@ -200,6 +195,8 @@ export function CotacaoPrint({
           padding: 15mm !important;
           box-sizing: border-box !important;
           background: white !important;
+          display: flex !important;
+          flex-direction: column !important;
         }
         .editavel {
           border: none !important;
@@ -210,7 +207,6 @@ export function CotacaoPrint({
       </style>
     `;
 
-    // Escreve o documento no Iframe
     iframeDoc.open();
     iframeDoc.write(`
       <!DOCTYPE html>
@@ -226,7 +222,6 @@ export function CotacaoPrint({
     `);
     iframeDoc.close();
 
-    // Dispara a impressão a partir do iframe e depois remove-o da memória
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -469,9 +464,10 @@ export function CotacaoPrint({
           <strong>São:&nbsp;</strong>{numeroParaExtenso(total)}.
         </div>
 
-        {/* DADOS BANCÁRIOS */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "18px", alignItems: "flex-start" }}>
-          <div style={{ display: "flex", gap: "12px", width: "60%" }}>
+        {/* DADOS BANCÁRIOS E CONDIÇÕES */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "18px", alignItems: "stretch" }}>
+          {/* Bancos */}
+          <div style={{ display: "flex", gap: "12px", width: "65%" }}>
             {[
               { nome: "MOZA BANCO", conta: "3903555910001", nib: "003400003903555910165", extra: <><strong>Titular:</strong> Magic Pro Services</> },
               { nome: "ABSA", conta: "0007102004618", nib: "000200070710200461876", extra: <><strong>Validade:</strong> {calcularValidadeDias()}</> },
@@ -485,18 +481,13 @@ export function CotacaoPrint({
               </div>
             ))}
           </div>
-          <div style={{ width: "35%", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "32px" }}>
-            <div style={{ width: "100%", borderBottom: "1px dotted #000", marginBottom: "7px" }} />
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
-              <input
-                type="text"
-                value={diretorGeralNome}
-                onChange={(e) => setDiretorGeralNome(e.target.value)}
-                className="editavel"
-                style={{ ...inputBase, width: `${Math.max(diretorGeralNome.length * 8, 100)}px`, display: "inline", fontSize: "12px" }}
-              />
-              <span>— Director Geral</span>
-            </div>
+
+          {/* NOVO: Condições Gerais */}
+          <div style={{ border: "1.5px solid #000", borderRadius: "14px", padding: "12px", fontSize: "12px", lineHeight: "1.65", width: "33%" }}>
+            <strong style={{ display: "block", marginBottom: "4px", fontSize: "13px" }}>Condições</strong>
+            <strong>Garantia Técnica</strong> - 1(Um) Ano.<br />
+            <strong>Prazo de Entrega</strong> - imediata após confirmação da Ordem.<br />
+            <strong>Condições de Fornecimento</strong> - Por Negociar.
           </div>
         </div>
 
@@ -517,6 +508,26 @@ export function CotacaoPrint({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* ESPAÇADOR FLEX: Empurra a assinatura e o rodapé para o fim da página */}
+        <div style={{ flexGrow: 1 }} />
+
+        {/* ASSINATURA MOVIDA PARA O FUNDO (À DIREITA) */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px", marginTop: "30px" }}>
+          <div style={{ width: "35%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ width: "100%", borderBottom: "1px solid #000", marginBottom: "7px" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+              <input
+                type="text"
+                value={diretorGeralNome}
+                onChange={(e) => setDiretorGeralNome(e.target.value)}
+                className="editavel"
+                style={{ ...inputBase, width: `${Math.max(diretorGeralNome.length * 8, 100)}px`, display: "inline", fontSize: "12px", textAlign: "center" }}
+              />
+              <span>— Director Geral</span>
+            </div>
+          </div>
         </div>
 
         {/* RODAPÉ */}
@@ -586,6 +597,8 @@ export function CotacaoPrint({
           box-sizing: border-box;
           margin: 68px auto 40px;
           box-shadow: 0 8px 32px rgba(0,0,0,.4);
+          display: flex;
+          flex-direction: column; /* NOVA REGRA: Permite empurrar o rodapé para baixo */
         }
         .editavel {
           background: transparent;
