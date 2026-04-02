@@ -533,11 +533,11 @@ export function CotacaoPrint({
         {/* RODAPÉ */}
         <div>
           <div style={{ fontSize: "9px", marginBottom: "2px" }}>NL</div>
-          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1.5px solid #000", borderBottom: "1.5px solid #000", padding: "4px 0", marginBottom: "8px", fontSize: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "0px", borderBottom: "0px", padding: "4px 0 4px 337px", marginBottom: "8px", fontSize: "12px" }}>
             <span>©Documento Processado pelo Computador</span>
             <span>{new Date().toLocaleDateString("pt-MZ")} {new Date().toLocaleTimeString("pt-MZ", { hour: "2-digit", minute: "2-digit" })}</span>
           </div>
-          <div style={{ fontSize: "9px", color: "#555" }}>Serviços | Consultoria | Soluções Técnicas — Magic Pro Services, Lda.</div>
+          <div style={{ fontSize: "9px", color: "#555", lineHeight: "0.8em" }}>Serviços | Consultoria | Soluções Técnicas — Magic Pro Services, Lda.</div>
         </div>
       </div>
 
