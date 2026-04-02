@@ -57,6 +57,7 @@ interface ContaBancaria {
   nome: string
   banco: string | null
   numero_conta: string | null
+  saldo_atual: number
 }
 
 interface DespesasClientProps {
@@ -181,6 +182,10 @@ export function DespesasClient({
       }
 
       if (editingId) {
+        // Buscar o estado anterior da despesa para detectar mudança de Pendente para Pago
+        const despesaAnterior = despesas.find(d => d.id === editingId)
+        const mudouParaPago = despesaAnterior?.estado === "Pendente" && estado === "Pago"
+        
         const { data: updated, error } = await supabase
           .from("despesas")
           .update(despesaData)
@@ -190,6 +195,74 @@ export function DespesasClient({
         if (error) throw error
         setDespesas((prev) => prev.map((d) => (d.id === editingId ? updated : d)))
         await logEditar("despesas", editingId, `Despesa actualizada - ${descricao} - ${formatarMZN(Number(valor))} MZN`)
+        
+        // Se mudou de Pendente para Pago, criar movimento bancário e actualizar saldo
+        if (mudouParaPago && contaBancariaId && contaBancariaId !== "none") {
+          // Buscar saldo actual da conta bancária
+          const { data: contaActual } = await supabase
+            .from("contas_bancarias")
+            .select("saldo_atual")
+            .eq("id", contaBancariaId)
+            .single()
+          
+          if (contaActual) {
+            const saldoActual = Number(contaActual.saldo_atual) || 0
+            const novoSaldo = saldoActual - valor
+            
+            // Criar movimento bancário de saída (débito)
+            const { error: movError } = await supabase
+              .from("movimentos_bancarios")
+              .insert({
+                conta_bancaria_id: contaBancariaId,
+                data: data,
+                descricao: `Despesa: ${descricao}`,
+                referencia: numeroDocumento || `DESP-${editingId.slice(0, 8).toUpperCase()}`,
+                tipo: "debito",
+                valor: valor,
+                saldo_apos: novoSaldo,
+                conciliado: false,
+                documento_tipo: "despesa",
+                documento_id: editingId,
+              })
+            
+            if (movError) {
+              console.error("[v0] Erro ao criar movimento bancário:", movError)
+            } else {
+              // Actualizar saldo da conta bancária
+              await supabase
+                .from("contas_bancarias")
+                .update({ saldo_atual: novoSaldo, updated_at: new Date().toISOString() })
+                .eq("id", contaBancariaId)
+            }
+          }
+          
+          // Gerar lançamento contabilístico ao marcar como pago
+          try {
+            const fornecedorNome = fornecedorId && fornecedorId !== "none"
+              ? fornecedores.find((f: any) => f.id === fornecedorId)?.nome
+              : undefined
+            
+            const formaPagamentoLanc = formaPagamento === "Dinheiro" ? "dinheiro"
+              : formaPagamento === "Cheque" ? "cheque"
+              : "transferencia"
+            
+            await lancarDespesa({
+              empresa_id: empresaId,
+              despesa_id: editingId,
+              numero: numeroDocumento || undefined,
+              data,
+              descricao: descricao,
+              fornecedor_nome: fornecedorNome,
+              subtotal: Number(valor) - Number(ivaSuportado),
+              iva: Number(ivaSuportado),
+              total: Number(valor),
+              forma_pagamento: formaPagamentoLanc,
+            })
+          } catch (lancamentoError) {
+            console.error("[v0] Erro ao gerar lançamento contabilístico:", lancamentoError)
+          }
+        }
+        
         toast.success("Despesa actualizada com sucesso")
       } else {
         const { data: newDespesa, error } = await supabase
