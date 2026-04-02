@@ -34,7 +34,7 @@ export default async function DespesasPage() {
       .order("data", { ascending: false }),
     supabase.from("fornecedores").select("id, nome, nuit, telefone"),
     empresaId
-      ? supabase.from("contas_bancarias").select("id, nome, banco, numero_conta").eq("empresa_id", empresaId).eq("ativa", true).order("nome")
+      ? supabase.from("contas_bancarias").select("id, nome, banco, numero_conta, saldo_atual").eq("empresa_id", empresaId).eq("ativa", true).order("nome")
       : Promise.resolve({ data: [] }),
   ])
 
