@@ -23,11 +23,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Search, Eye, Download, Trash2, FileText, Mail, Printer, File } from "lucide-react"
+import { Plus, Search, Eye, Download, Trash2, FileText, Mail, Printer, File, Pencil } from "lucide-react"
 import { DocumentoUpload } from "@/components/shared/documento-upload"
 import { EmailDialog } from "@/components/shared/email-dialog"
 import { CartaTemplate } from "./carta-template"
 import { CartaPrint } from "./carta-print"
+import { CartaEditor } from "./carta-editor"
 import type { Carta } from "@/lib/types"
 
 interface CartasClientProps {
@@ -41,6 +42,8 @@ export function CartasClient({ initialCartas }: CartasClientProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [isEmailOpen, setIsEmailOpen] = useState(false)
   const [isPrintOpen, setIsPrintOpen] = useState(false)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [editingCarta, setEditingCarta] = useState<Carta | null>(null)
   const [selectedCarta, setSelectedCarta] = useState<Carta | null>(null)
   const [printCarta, setPrintCarta] = useState<Carta | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -172,6 +175,87 @@ export function CartasClient({ initialCartas }: CartasClientProps) {
     setIsEmailOpen(true)
   }
 
+  // Abrir editor para editar carta existente
+  const handleEdit = (carta: Carta) => {
+    setEditingCarta(carta)
+    setIsEditorOpen(true)
+  }
+
+  // Abrir editor para nova carta
+  const handleNewCarta = () => {
+    setEditingCarta(null)
+    setIsEditorOpen(true)
+  }
+
+  // Guardar carta do editor
+  const handleSaveCarta = async (cartaData: Partial<Carta> & { conteudo_html?: string }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error("[v0] Usuario nao autenticado")
+        return
+      }
+
+      if (editingCarta) {
+        // Actualizar carta existente
+        const { data, error } = await supabase
+          .from("cartas")
+          .update({
+            entidade_destinataria: cartaData.entidade_destinataria,
+            numero_contrato: cartaData.numero_contrato,
+            data_contrato: cartaData.data_contrato || null,
+            valor_total: cartaData.valor_total,
+            prazo_dias: cartaData.prazo_dias,
+            local: cartaData.local,
+            data_carta: cartaData.data_carta,
+            nome_advogado: cartaData.nome_advogado,
+            cp_advogado: cartaData.cp_advogado,
+            conteudo_html: cartaData.conteudo_html,
+          })
+          .eq("id", editingCarta.id)
+          .select()
+          .single()
+
+        if (error) {
+          console.error("[v0] Erro ao actualizar carta:", error)
+        } else if (data) {
+          setCartas(cartas.map(c => c.id === data.id ? data : c))
+          setIsEditorOpen(false)
+          setEditingCarta(null)
+        }
+      } else {
+        // Criar nova carta
+        const { data, error } = await supabase
+          .from("cartas")
+          .insert([{
+            user_id: user.id,
+            entidade_destinataria: cartaData.entidade_destinataria,
+            numero_contrato: cartaData.numero_contrato,
+            data_contrato: cartaData.data_contrato || null,
+            valor_total: cartaData.valor_total || 0,
+            prazo_dias: cartaData.prazo_dias || 15,
+            local: cartaData.local || "Maputo",
+            data_carta: cartaData.data_carta || new Date().toISOString().split("T")[0],
+            nome_advogado: cartaData.nome_advogado,
+            cp_advogado: cartaData.cp_advogado,
+            conteudo_html: cartaData.conteudo_html,
+          }])
+          .select()
+          .single()
+
+        if (error) {
+          console.error("[v0] Erro ao criar carta:", error)
+        } else if (data) {
+          setCartas([data, ...cartas])
+          setIsEditorOpen(false)
+          setEditingCarta(null)
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Excepcao ao guardar carta:", error)
+    }
+  }
+
   // Imprimir/Exportar PDF usando componente de impressao
   const handlePrint = (carta: Carta) => {
     setPrintCarta(carta)
@@ -213,12 +297,13 @@ export function CartasClient({ initialCartas }: CartasClientProps) {
             className="pl-10"
           />
         </div>
+        <Button onClick={handleNewCarta}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nova Carta
+        </Button>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Carta
-            </Button>
+            <span className="hidden" />
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -353,7 +438,10 @@ export function CartasClient({ initialCartas }: CartasClientProps) {
                   <TableCell>{formatCurrency(carta.valor_total)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handlePreview(carta)} title="Pré-visualizar">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(carta)} title="Editar">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handlePreview(carta)} title="Pre-visualizar">
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handlePrint(carta)} title="Imprimir/PDF">
@@ -448,6 +536,19 @@ Magic Pro Services`}
             setIsPrintOpen(false)
             setPrintCarta(null)
           }}
+        />
+      )}
+
+      {/* Editor Modal em tela cheia */}
+      {isEditorOpen && (
+        <CartaEditor
+          carta={editingCarta}
+          onSave={handleSaveCarta}
+          onClose={() => {
+            setIsEditorOpen(false)
+            setEditingCarta(null)
+          }}
+          isNew={!editingCarta}
         />
       )}
     </div>
