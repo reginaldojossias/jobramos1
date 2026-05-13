@@ -33,46 +33,42 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
     return `${day} de ${month} de ${year}`
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-MZ", {
-      style: "currency",
-      currency: "MZN",
-    }).format(value)
-  }
-
   const handlePrint = () => {
     window.print()
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-auto">
-      {/* Modal Container */}
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[95vh] overflow-auto">
-        {/* Modal Header - Only visible on screen */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between print:hidden z-10">
+    <div className="carta-print-overlay fixed inset-0 z-50 overflow-auto" style={{ background: "rgba(0,0,0,0.6)" }}>
+      {/* Toolbar fixo no topo - so visivel na tela */}
+      <div className="carta-toolbar print:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
+        <div className="flex items-center justify-between px-6 py-3">
           <h2 className="text-lg font-semibold">Pre-visualizacao da Carta</h2>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handlePrint}
-              className="px-4 py-2 bg-[#3b5998] text-white rounded-lg hover:bg-[#2d4373] transition-colors"
+              className="px-4 py-2 bg-[#3b5998] text-white rounded-lg hover:bg-[#2d4373] transition-colors text-sm font-medium"
             >
               Imprimir / Guardar PDF
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+              className="px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors text-sm font-medium"
             >
               Fechar
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Print Content - Page 1 */}
-        <div ref={printRef} className="bg-white" id="carta-print">
-          {/* Página 1 */}
-          <div className="carta-page page-1 relative w-[210mm] min-h-[297mm] mx-auto bg-white" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+      {/* Area de scroll com paginas centradas */}
+      <div className="carta-scroll-area flex flex-col items-center gap-6 py-8 px-4">
+        <div ref={printRef} id="carta-print" className="flex flex-col items-center gap-6">
+          {/* Pagina 1 */}
+          <div className="carta-page">
             {/* Header Wave */}
-            <div className="absolute top-[5mm] right-0 w-[90%]" style={{ height: "110px" }}>
+            <div className="carta-header-wave">
               <Image
                 src="/images/blue-wave-header.png"
                 alt=""
@@ -82,8 +78,8 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
               />
             </div>
 
-            {/* Logo Section */}
-            <div className="absolute top-[140px] left-[25mm]">
+            {/* Logo */}
+            <div className="carta-logo">
               <Image
                 src="/images/magic-pro-logo-full.png"
                 alt="Magic Pro Services"
@@ -95,41 +91,35 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
             </div>
 
             {/* Watermark */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: "25%" }}>
-              <div className="relative w-[70%] h-[50%]">
-                <Image
-                  src="/images/atom-watermark-new.png"
-                  alt=""
-                  fill
-                  className="object-contain opacity-30"
-                />
-              </div>
+            <div className="carta-watermark">
+              <Image
+                src="/images/atom-watermark-new.png"
+                alt=""
+                fill
+                className="object-contain opacity-30"
+              />
             </div>
 
-            {/* Content */}
-            <div className="pt-[190px] px-[25mm] pb-[30mm] relative z-10">
-              {/* Destinatario */}
-              <div className="mb-6">
-                <p className="font-bold">Ao</p>
-                <p className="font-bold">{carta.entidade_destinataria}</p>
+            {/* Conteudo */}
+            <div className="carta-content">
+              <div style={{ marginBottom: "18pt" }}>
+                <p style={{ fontWeight: "bold", margin: 0 }}>Ao</p>
+                <p style={{ fontWeight: "bold", margin: 0 }}>{carta.entidade_destinataria}</p>
               </div>
 
-              {/* Assunto */}
-              <p className="mb-6">
-                <span className="font-bold">Assunto:</span> Interpelacao extrajudicial
+              <p style={{ marginBottom: "18pt" }}>
+                <span style={{ fontWeight: "bold" }}>Assunto:</span> Interpelacao extrajudicial
               </p>
 
-              {/* Saudacao */}
-              <p className="mb-4">Exmo Senhores,</p>
+              <p style={{ marginBottom: "12pt" }}>Exmo Senhores,</p>
 
-              {/* Corpo */}
-              <div className="text-sm leading-relaxed text-justify space-y-3">
+              <div className="carta-corpo">
                 <p>
                   Por procuracao outorgada pela interpelante, a empresa Magic Pro Services, (cuja a copia junta-se em
                   anexo), na qualidade de seus advogados e sob o seu mandato, serve a presente carta para interpelar a
                   V. Excia, nos termos e fundamentos seguintes:
                 </p>
-                <ol className="list-decimal pl-6 space-y-2">
+                <ol className="carta-lista">
                   <li>
                     Entre a interpelante e o {carta.entidade_destinataria} foi celebrado um contrato
                     de prestacao de servicos graficos, <strong>n.o {carta.numero_contrato}</strong>.
@@ -168,17 +158,17 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="absolute bottom-[15mm] left-0 right-0 text-center text-xs text-gray-600">
+            {/* Rodape */}
+            <div className="carta-footer">
               <p>Av. FPLM No 1710 R/C-2 * Contatos + 258 879 482 800 / +258 867 340 018 * E-mail: magicproservices0@gmail.com</p>
               <p>Maputo - Mocambique</p>
             </div>
           </div>
 
-          {/* Página 2 */}
-          <div className="carta-page page-2 relative w-[210mm] min-h-[297mm] mx-auto bg-white page-break" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+          {/* Pagina 2 */}
+          <div className="carta-page page-break">
             {/* Header Wave */}
-            <div className="absolute top-[5mm] right-0 w-[90%]" style={{ height: "110px" }}>
+            <div className="carta-header-wave">
               <Image
                 src="/images/blue-wave-header.png"
                 alt=""
@@ -188,8 +178,8 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
               />
             </div>
 
-            {/* Logo Section */}
-            <div className="absolute top-[140px] left-[25mm]">
+            {/* Logo */}
+            <div className="carta-logo">
               <Image
                 src="/images/magic-pro-logo-full.png"
                 alt="Magic Pro Services"
@@ -201,45 +191,43 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
             </div>
 
             {/* Watermark */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: "15%" }}>
-              <div className="relative w-[70%] h-[60%]">
-                <Image
-                  src="/images/atom-watermark-new.png"
-                  alt=""
-                  fill
-                  className="object-contain opacity-30"
-                />
-              </div>
+            <div className="carta-watermark">
+              <Image
+                src="/images/atom-watermark-new.png"
+                alt=""
+                fill
+                className="object-contain opacity-30"
+              />
             </div>
 
-            {/* Content */}
-            <div className="pt-[190px] px-[25mm] pb-[30mm] relative z-10">
-              <ol className="list-decimal pl-6 space-y-2 text-sm leading-relaxed text-justify" start={9}>
-                <li>
-                  Por uma resolucao extrajudicial celere e nao litigiosa, subscrevemo-nos com elevada estima e
-                  consideracao, cientes de que, tendo em conta os criterios de celeridade, eficacia e boa-fe, a nossa
-                  exposicao merecera, da vossa parte, atencao e prontidao.
-                </li>
-              </ol>
+            {/* Conteudo */}
+            <div className="carta-content">
+              <div className="carta-corpo">
+                <ol className="carta-lista" start={9}>
+                  <li>
+                    Por uma resolucao extrajudicial celere e nao litigiosa, subscrevemo-nos com elevada estima e
+                    consideracao, cientes de que, tendo em conta os criterios de celeridade, eficacia e boa-fe, a nossa
+                    exposicao merecera, da vossa parte, atencao e prontidao.
+                  </li>
+                </ol>
+              </div>
 
-              {/* Data e Local - Centralizado */}
-              <p className="mt-16 text-center text-sm">
+              <p style={{ marginTop: "48pt", textAlign: "center" }}>
                 {carta.local}, aos {formatDate(carta.data_carta)}
               </p>
 
-              {/* Assinatura - Centralizada */}
-              <div className="mt-10 text-center">
-                <p className="text-[#1a3a6e] font-bold">O Advogado</p>
-                <div className="mt-16 inline-block">
-                  <div className="border-t border-gray-500 w-64 mx-auto" />
-                  <p className="mt-2 text-[#1a3a6e] font-bold">{carta.nome_advogado}</p>
-                  <p className="text-[#1a3a6e] font-bold">CP {carta.cp_advogado}</p>
+              <div style={{ marginTop: "36pt", textAlign: "center" }}>
+                <p style={{ color: "#1a3a6e", fontWeight: "bold", margin: 0 }}>O Advogado</p>
+                <div style={{ marginTop: "60pt", display: "inline-block" }}>
+                  <div style={{ borderTop: "1px solid #6b7280", width: "256px", margin: "0 auto" }} />
+                  <p style={{ marginTop: "6pt", color: "#1a3a6e", fontWeight: "bold" }}>{carta.nome_advogado}</p>
+                  <p style={{ color: "#1a3a6e", fontWeight: "bold", margin: 0 }}>CP {carta.cp_advogado}</p>
                 </div>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="absolute bottom-[15mm] left-0 right-0 text-center text-xs text-gray-600">
+            {/* Rodape */}
+            <div className="carta-footer">
               <p>Av. FPLM No 1710 R/C-2 * Contatos + 258 879 482 800 / +258 867 340 018 * E-mail: magicproservices0@gmail.com</p>
               <p>Maputo - Mocambique</p>
             </div>
@@ -247,44 +235,185 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
         </div>
       </div>
 
-      {/* Print Styles */}
+      {/* Estilos do documento - tamanho real A4 e fonte 12pt */}
       <style jsx global>{`
+        /* ============================================
+           PAGINA A4 - TAMANHO REAL PARA TELA E IMPRESSAO
+           ============================================ */
+        .carta-page {
+          width: 210mm;
+          min-height: 297mm;
+          background: white;
+          position: relative;
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 12pt;
+          line-height: 1.6;
+          color: #000;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+          box-sizing: border-box;
+          flex-shrink: 0;
+          overflow: hidden;
+        }
+
+        .carta-header-wave {
+          position: absolute;
+          top: 5mm;
+          right: 0;
+          width: 90%;
+          height: 110px;
+          z-index: 1;
+        }
+
+        .carta-logo {
+          position: absolute;
+          top: 140px;
+          left: 25mm;
+          z-index: 2;
+        }
+
+        .carta-watermark {
+          position: absolute;
+          top: 25%;
+          left: 15%;
+          width: 70%;
+          height: 50%;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .carta-content {
+          padding: 190px 25mm 30mm 25mm;
+          position: relative;
+          z-index: 10;
+          font-size: 12pt;
+          line-height: 1.6;
+        }
+
+        .carta-corpo {
+          text-align: justify;
+          font-size: 12pt;
+          line-height: 1.6;
+        }
+
+        .carta-corpo p {
+          margin: 0 0 10pt 0;
+          font-size: 12pt;
+          line-height: 1.6;
+        }
+
+        .carta-lista {
+          list-style: decimal;
+          padding-left: 24pt;
+          margin: 10pt 0;
+        }
+
+        .carta-lista li {
+          margin-bottom: 8pt;
+          font-size: 12pt;
+          line-height: 1.6;
+          text-align: justify;
+        }
+
+        .carta-footer {
+          position: absolute;
+          bottom: 15mm;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 9pt;
+          color: #4b5563;
+          z-index: 2;
+        }
+
+        .carta-footer p {
+          margin: 0;
+        }
+
+        /* ============================================
+           PREVIEW NA TELA - paginas em escala 100%
+           ============================================ */
+        @media screen {
+          .carta-scroll-area {
+            min-width: max-content;
+          }
+        }
+
+        /* ============================================
+           IMPRESSAO - escala 100%, A4 exacto
+           ============================================ */
         @media print {
+          @page {
+            size: A4;
+            margin: 0;
+          }
+
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            width: 210mm !important;
+            height: auto !important;
+          }
+
           body * {
             visibility: hidden;
           }
+
           #carta-print,
           #carta-print * {
             visibility: visible;
           }
-          #carta-print {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          .carta-page {
-            width: 210mm !important;
-            min-height: 297mm !important;
-            height: 297mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            page-break-after: always;
-            page-break-inside: avoid;
+
+          .carta-print-overlay {
+            position: static !important;
             background: white !important;
+            overflow: visible !important;
+            inset: auto !important;
           }
-          .carta-page:last-child {
-            page-break-after: auto;
-          }
-          .page-break {
-            page-break-before: always;
-          }
+
+          .carta-toolbar,
           .print\\:hidden {
             display: none !important;
           }
-          @page {
-            size: A4;
-            margin: 0;
+
+          .carta-scroll-area {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
+            background: white !important;
+          }
+
+          #carta-print {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            gap: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 210mm !important;
+          }
+
+          .carta-page {
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            page-break-after: always;
+            page-break-inside: avoid;
+            background: white !important;
+            overflow: hidden !important;
+          }
+
+          .carta-page:last-child {
+            page-break-after: auto;
+          }
+
+          .page-break {
+            page-break-before: always;
           }
         }
       `}</style>
