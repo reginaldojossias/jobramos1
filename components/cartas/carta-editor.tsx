@@ -39,6 +39,60 @@ interface CartaEditorProps {
   isNew?: boolean
 }
 
+// Gera HTML padrão a partir dos dados da carta (para cartas antigas sem conteudo_html)
+function gerarHtmlPadraoDaCarta(carta: Carta): string {
+  const formatDataLocal = (dateStr: string | null) => {
+    if (!dateStr) return ""
+    const date = new Date(dateStr)
+    const months = [
+      "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ]
+    return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`
+  }
+
+  const entidade = carta.entidade_destinataria || "[Destinatario]"
+  const numeroContrato = carta.numero_contrato || "[N. Contrato]"
+  const prazoDias = carta.prazo_dias || 15
+  const local = carta.local || "Maputo"
+  const dataCarta = formatDataLocal(carta.data_carta)
+  const nomeAdvogado = carta.nome_advogado || ""
+  const cpAdvogado = carta.cp_advogado || ""
+
+  return `
+<p style="margin-top: 20px;"><strong>Assunto:</strong> Interpelacao extrajudicial</p>
+<p style="margin-top: 15px;">Exmo Senhores,</p>
+<p style="text-align: justify;">
+Por procuracao outorgada pela interpelante, a empresa Magic Pro Services, (cuja a copia junta-se em anexo), na qualidade de seus advogados e sob o seu mandato, serve a presente carta para interpelar a V. Excia, nos termos e fundamentos seguintes:
+</p>
+<ol>
+  <li style="text-align: justify;">Entre a interpelante e o ${entidade} foi celebrado um contrato de prestacao de servicos graficos, <strong>n.o ${numeroContrato}</strong>.</li>
+  <li style="text-align: justify;">A interpelante forneceu os servicos contratados na totalidade e tempestivamente.</li>
+  <li style="text-align: justify;">Foi acordado que a ${entidade} apos a recepcao dos servicos ira efectuar o pagamento dentro de trinta dias, caso que nao aconteceu ate a data que se grafa a presente carta.</li>
+  <li style="text-align: justify;">Nesta senda, a interpelante por diversas vezes aproximou-se para persuadir ao pagamento das facturas em anexo, de forma a poder fazer face aos compromissos assumidos com os fornecedores, e sem sucesso.</li>
+  <li style="text-align: justify;">No entanto, passam mais de (05) cinco meses sem que a ${entidade} nao pagou nenhuma das facturas, assim a interpelante vem, por este meio, solicitar a rapida resolucao deste assunto, procedendo a V. Excia com o pagamento das facturas em anexo.</li>
+  <li style="text-align: justify;">E importante recordar que os contratos devem ser pontualmente cumpridos, conforme previsto no artigo 406 do Codigo Civil. Por outro lado, o devedor so fica exonerado da obrigacao mediante cumprimento integral da mesma, nos termos dos artigos 762 e 763, no1, todos do Codigo Civil.</li>
+  <li style="text-align: justify;">Assim, diante de todo o acima exposto, cumpre conceder a V. Excia um prazo impreterivel de <strong>${prazoDias} dias</strong>, contados a partir da data da recepcao da presente interpelacao, para que proceda com o pagamento das facturas em anexo.</li>
+  <li style="text-align: justify;">A interpelante faz notar que findo este prazo, a falta de oferecimento de qualquer pronunciamento de vossa parte, equivalera a recusa de negociacao, o que determinara o encaminhamento do assunto para as instancias judiciais com vista a reposicao dos deveres violados.</li>
+  <li style="text-align: justify;">Por uma resolucao extrajudicial celere e nao litigiosa, subscrevemo-nos com elevada estima e consideracao, cientes de que, tendo em conta os criterios de celeridade, eficacia e boa-fe, a nossa exposicao merecera, da vossa parte, atencao e prontidao.</li>
+</ol>
+<p style="margin-top: 60px; text-align: center;">${local}, aos ${dataCarta}</p>
+${nomeAdvogado ? `
+<div style="margin-top: 40px; text-align: center;">
+  <p style="font-weight: bold; color: #1a3a6e;">O Advogado</p>
+  <div style="width: 200px; border-top: 1px solid #666; margin: 50px auto 10px;"></div>
+  <p style="font-weight: bold; color: #1a3a6e;">${nomeAdvogado}</p>
+  ${cpAdvogado ? `<p style="font-weight: bold; color: #1a3a6e;">CP ${cpAdvogado}</p>` : ""}
+</div>
+` : `
+<div style="margin-top: 60px; text-align: center;">
+  <div style="width: 200px; border-top: 1px solid #666; margin: 0 auto;"></div>
+  <p style="margin-top: 5px;">(Assinatura)</p>
+</div>
+`}
+  `.trim()
+}
+
 export function CartaEditor({ carta, onSave, onClose, isNew = false }: CartaEditorProps) {
   const [mounted, setMounted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -492,7 +546,11 @@ export function CartaEditor({ carta, onSave, onClose, isNew = false }: CartaEdit
                 style={{ lineHeight: 1.6 }}
                 suppressContentEditableWarning
                 dangerouslySetInnerHTML={{
-                  __html: carta?.conteudo_html || "<p>Comece a escrever aqui...</p>"
+                  __html: carta?.conteudo_html
+                    ? carta.conteudo_html
+                    : carta
+                      ? gerarHtmlPadraoDaCarta(carta)
+                      : "<p>Comece a escrever aqui...</p>"
                 }}
               />
             </div>
