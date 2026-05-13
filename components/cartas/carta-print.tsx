@@ -1,6 +1,7 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import Image from "next/image"
 
 interface Carta {
@@ -23,6 +24,15 @@ interface CartaPrintProps {
 
 export function CartaPrint({ carta, onClose }: CartaPrintProps) {
   const printRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [])
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return ""
@@ -37,8 +47,8 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
     window.print()
   }
 
-  return (
-    <div className="carta-print-overlay fixed inset-0 z-50 overflow-auto" style={{ background: "rgba(0,0,0,0.6)" }}>
+  const content = (
+    <div className="carta-print-overlay fixed inset-0 z-[9999] overflow-auto" style={{ background: "rgba(0,0,0,0.6)" }}>
       {/* Toolbar fixo no topo - so visivel na tela */}
       <div className="carta-toolbar print:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
         <div className="flex items-center justify-between px-6 py-3">
@@ -343,8 +353,9 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
            ============================================ */
         @media print {
           @page {
-            size: A4;
-            margin: 0;
+            size: A4 portrait;
+            margin: 0 !important;
+            padding: 0 !important;
           }
 
           html, body {
@@ -352,27 +363,36 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
             padding: 0 !important;
             background: white !important;
             width: 210mm !important;
+            min-width: 210mm !important;
+            max-width: 210mm !important;
             height: auto !important;
+            overflow: visible !important;
+            zoom: 1 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
 
-          body * {
-            visibility: hidden;
+          /* Esconder TODOS os elementos do dashboard / layout */
+          body > *:not(.carta-print-overlay) {
+            display: none !important;
           }
 
-          #carta-print,
-          #carta-print * {
-            visibility: visible;
-          }
-
+          /* O overlay vira o container raiz da impressao */
           .carta-print-overlay {
             position: static !important;
             background: white !important;
             overflow: visible !important;
             inset: auto !important;
+            display: block !important;
+            width: 210mm !important;
+            min-width: 210mm !important;
+            max-width: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            z-index: auto !important;
           }
 
-          .carta-toolbar,
-          .print\\:hidden {
+          .carta-toolbar {
             display: none !important;
           }
 
@@ -382,41 +402,71 @@ export function CartaPrint({ carta, onClose }: CartaPrintProps) {
             margin: 0 !important;
             gap: 0 !important;
             background: white !important;
+            width: 210mm !important;
+            min-width: 210mm !important;
+            max-width: 210mm !important;
           }
 
           #carta-print {
             display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
             gap: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
             width: 210mm !important;
+            min-width: 210mm !important;
+            max-width: 210mm !important;
           }
 
           .carta-page {
             width: 210mm !important;
             height: 297mm !important;
             min-height: 297mm !important;
+            max-height: 297mm !important;
             margin: 0 !important;
             padding: 0 !important;
             box-shadow: none !important;
+            border: none !important;
             page-break-after: always;
             page-break-inside: avoid;
+            break-after: page;
+            break-inside: avoid;
             background: white !important;
             overflow: hidden !important;
+            transform: none !important;
+            zoom: 1 !important;
           }
 
           .carta-page:last-child {
             page-break-after: auto;
+            break-after: auto;
           }
 
           .page-break {
             page-break-before: always;
+            break-before: page;
+          }
+
+          .carta-content {
+            font-size: 12pt !important;
+            line-height: 1.6 !important;
+          }
+
+          .carta-corpo,
+          .carta-corpo p,
+          .carta-lista li {
+            font-size: 12pt !important;
+            line-height: 1.6 !important;
           }
         }
       `}</style>
     </div>
   )
+
+  // Renderizar no body usando createPortal para escapar do layout do dashboard
+  // Isto garante que a impressao nao tenta encaixar a sidebar/layout na pagina A4
+  if (!mounted) return null
+  return createPortal(content, document.body)
 }
